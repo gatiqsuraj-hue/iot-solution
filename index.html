@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IOT Solution</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Roboto,Arial,sans-serif;background:#f0f3f8;color:#2b3445}
+.hidden{display:none!important}
+
+/* ---------- LOGIN ---------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(circle at 20% 20%,#1e3a8a 0,#0f172a 55%,#020617 100%);position:relative;overflow:hidden}
+#login::before,#login::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.45}
+#login::before{width:380px;height:380px;background:#06b6d4;top:-100px;right:-80px}
+#login::after{width:420px;height:420px;background:#7c3aed;bottom:-140px;left:-100px}
+.lcard{position:relative;z-index:1;display:flex;width:100%;max-width:900px;min-height:520px;border-radius:20px;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);background:#fff}
+.lleft{flex:1;padding:50px 40px;color:#fff;background:linear-gradient(160deg,#0ea5e9,#2563eb 55%,#4f46e5);
+  display:flex;flex-direction:column;justify-content:center}
+.logo{font-size:34px;font-weight:800;letter-spacing:4px;line-height:1.1}
+.logo span{display:block;font-size:34px;color:#fde047}
+.lleft p{margin-top:22px;font-size:16px;line-height:1.6;opacity:.92}
+.chips{margin-top:30px;display:flex;flex-wrap:wrap;gap:8px}
+.chips i{font-style:normal;font-size:12px;padding:5px 12px;border-radius:20px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3)}
+.lright{flex:1;padding:50px 44px;display:flex;flex-direction:column;justify-content:center}
+.lright h2{font-size:26px;color:#0f172a;margin-bottom:6px}
+.lright .sub{color:#64748b;font-size:14px;margin-bottom:28px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+.field input{width:100%;padding:13px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;outline:none;transition:.2s;background:#f8fafc}
+.field input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+.btn{width:100%;padding:14px;border:0;border-radius:10px;font-size:15px;font-weight:700;letter-spacing:1px;color:#fff;cursor:pointer;
+  background:linear-gradient(90deg,#2563eb,#4f46e5);transition:.2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(79,70,229,.4)}
+.err{color:#dc2626;font-size:13px;margin-bottom:12px;min-height:16px}
+@media(max-width:720px){.lleft{display:none}}
+
+/* ---------- APP ---------- */
+#app{display:flex;min-height:100vh}
+.side{width:250px;background:linear-gradient(180deg,#0f172a,#1e293b);color:#cbd5e1;flex-shrink:0;display:flex;flex-direction:column}
+.side .brand{padding:22px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,.08)}
+.side .brand b{font-size:20px;letter-spacing:3px;color:#fff;display:block}
+.side .brand b span{color:#fde047}
+.avatar{width:70px;height:70px;border-radius:50%;margin:18px auto 8px;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:22px;color:#fff;background:linear-gradient(135deg,#06b6d4,#4f46e5);border:3px solid rgba(255,255,255,.2)}
+.uname{text-align:center;color:#fff;font-weight:600;margin-bottom:14px}
+.nav a{display:block;padding:13px 22px;color:#cbd5e1;text-decoration:none;font-size:14.5px;cursor:pointer;border-left:3px solid transparent}
+.nav a:hover{background:rgba(255,255,255,.06)}
+.nav a.active{background:rgba(37,99,235,.25);border-left-color:#38bdf8;color:#fff}
+.main{flex:1;min-width:0}
+.top{height:62px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.top .search{color:#94a3b8;font-size:14px}
+.top button{border:1px solid #e2e8f0;background:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;color:#475569}
+.top button:hover{background:#f1f5f9}
+.content{padding:26px}
+h1{font-size:24px;font-weight:500;color:#2563eb;margin-bottom:20px}
+h1 small{font-size:15px;color:#475569}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px;margin-bottom:22px}
+.card{background:#fff;border-radius:10px;padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.ic{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0}
+.card .n{font-size:30px;font-weight:600}
+.card .l{color:#64748b;font-size:14px}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+.panel{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.panel h3{padding:16px 20px;font-size:17px;font-weight:500;border-bottom:1px solid #eef1f6}
+.panel .body{padding:16px 20px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:#64748b;letter-spacing:.5px;padding:14px 20px;background:#f8fafc}
+td{padding:15px 20px;border-top:1px solid #eef1f6;font-size:14.5px}
+.tag{padding:3px 10px;border-radius:12px;font-size:12px;background:#dbeafe;color:#1d4ed8}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:6px}
+.sect{margin:26px 0 12px;font-size:14px;font-weight:600;color:#475569;letter-spacing:1px}
+.soon{padding:60px;text-align:center;color:#94a3b8}
+svg text{font-size:11px;fill:#94a3b8}
+.nav a.sub{padding:11px 22px 11px 40px;font-size:13.5px;background:rgba(0,0,0,.18)}
+.fm label{display:block;font-size:13px;font-weight:600;color:#2563eb;margin:16px 0 6px;letter-spacing:.3px}
+.fm select,.fm input,.fm textarea{width:100%;max-width:640px;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:6px;font-size:15px;background:#fff;outline:none;font-family:inherit}
+.fm select:focus,.fm input:focus,.fm textarea:focus{border-color:#2563eb}
+.hint{font-weight:400;color:#94a3b8}
+.btns{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.btns button,.b2{padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer;border-radius:3px}
+.b1{background:#0e7fa8;color:#fff;border:1px solid #0e7fa8}
+.b2{background:#fff;color:#64748b;border:1px solid #cbd5e1}
+.b3{background:#fff;color:#0f766e;border:1px solid #0f766e}
+.msg{margin-top:14px;font-size:14px}
+.msg.ok,.msg.bad{padding:10px 14px;border-radius:6px}
+.msg.ok{background:#dcfce7;color:#166534}.msg.bad{background:#fee2e2;color:#991b1b}
+.note{margin-top:18px;padding:16px;max-width:640px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;font-size:14px;line-height:1.6}
+.note code{background:#e2e8f0;padding:1px 6px;border-radius:4px}
+.mini{margin:12px 0;background:#fff;width:auto}.mini th,.mini td{padding:8px 14px;border:1px solid #e2e8f0}
+.srch{width:100%;max-width:320px;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:20px;outline:none}
+.tag.g{background:#dcfce7;color:#166534}.tag.r{background:#fee2e2;color:#991b1b}.tag.y{background:#fef9c3;color:#854d0e}
+.del{border:0;background:#fee2e2;border-radius:4px;padding:6px 9px;cursor:pointer}
+.hrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}.hrow h1{margin:0}
+.addb{background:#2563eb;color:#fff;border:0;padding:10px 22px;border-radius:22px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.35)}
+.addb:hover{background:#1d4ed8}
+.chips2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.th{display:flex;justify-content:space-between;align-items:center}
+.ib{width:28px;height:28px;margin-left:6px;border:1px solid #fdba74;background:#fff7ed;color:#c2410c;border-radius:3px;cursor:pointer;font-size:14px}
+.ib.red{border-color:#fca5a5;background:#fee2e2;color:#b91c1c}
+.term{background:#2b2b2b;color:#fff;font-family:Consolas,"Courier New",monospace;font-size:13px;height:480px;overflow:auto;padding:12px 14px;line-height:1.5}
+.info{margin-top:14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:14px 20px}
+.it{width:auto}.it td{border:0;padding:5px 14px;font-size:14px}.it td:first-child{color:#475569}
+.it code{background:#dbeafe;padding:2px 8px;border-radius:4px}
+.sm{padding:4px 10px!important;font-size:12px!important}
+
+/* ---------- 3D PCB LOGIN BG ---------- */
+#pcb3d{position:absolute;inset:0;z-index:0}
+#pcb3d canvas{display:block;width:100%;height:100%}
+#login::before,#login::after{display:none}
+.lcard{background:rgba(255,255,255,.62);backdrop-filter:blur(2px);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+#login .lleft{background:linear-gradient(160deg,rgba(14,165,233,.78),rgba(37,99,235,.78) 55%,rgba(79,70,229,.78))}
+#login .field input{background:rgba(255,255,255,.85)}
+/* ---------- NEW DASHBOARD ---------- */
+.hero{border-radius:14px;padding:24px 28px;color:#fff;background:linear-gradient(120deg,#0f172a,#1e3a8a 60%,#6366f1);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.hero h2{font-size:22px;font-weight:600}.hero p{opacity:.75;font-size:13.5px;margin-top:4px}
+.hero .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:6px 14px;border-radius:20px;font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
+.kpi{border-radius:14px;padding:20px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 20px rgba(15,23,42,.15)}
+.kpi .n{font-size:32px;font-weight:700}.kpi .n small{font-size:13px;opacity:.85;font-weight:500}.kpi .l{font-size:13px;opacity:.9;margin-top:2px}
+.kpi .wm{position:absolute;right:-6px;bottom:-16px;font-size:84px;opacity:.18;line-height:1}
+.hb{display:flex;align-items:center;gap:10px;margin:11px 0;font-size:13px}
+.hb .nm{width:96px;color:#475569;flex-shrink:0}.hb .tr{flex:1;height:10px;background:#eef2f7;border-radius:6px;overflow:hidden}
+.hb .tr i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#06b6d4,#6366f1)}.hb b{width:26px;text-align:right;color:#334155}
+.hcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.hc{background:#fff;border-radius:12px;padding:16px 18px;border-left:5px solid;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center}
+.hc .n{font-size:26px;font-weight:700;color:#0f172a}.hc .l{font-size:13px;color:#64748b}.hc .e{font-size:26px;opacity:.85}
+.fm .row2{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sep{margin:26px 0 0;border-top:1px dashed #cbd5e1;max-width:640px}
+.tag.p{background:#ede9fe;color:#5b21b6}
+.pgsel{margin-top:4px;padding:3px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;background:#fff;color:#334155;cursor:pointer}
+.pgbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid #eef1f6;font-size:13px;color:#64748b;flex-wrap:wrap;gap:8px}
+.pgbar button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:800px){.side{display:none}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login">
+  <div id="pcb3d"></div>
+  <div class="lcard">
+    <div class="lleft">
+      <div class="logo">IOT<span>SOLUTION</span></div>
+      <p>Please login to access your account and manage your devices remotely.</p>
+      <div class="chips"><i>GPS Tracking</i><i>Fleet Control</i><i>Remote Config</i><i>Firmware OTA</i></div>
+    </div>
+    <form class="lright" id="lform" autocomplete="off">
+      <h2>Welcome Back</h2>
+      <div class="sub">Sign in to continue to your dashboard</div>
+      <div class="field"><label>Login ID</label><input id="uid" type="text" placeholder="Enter Login ID" required></div>
+      <div class="field"><label>Password</label><input id="pwd" type="password" placeholder="Enter Password" required></div>
+      <div class="err" id="err"></div>
+      <button class="btn" type="submit">LOG IN</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <aside class="side">
+    <div class="brand"><b>IOT <span>SOLUTION</span></b></div>
+    <div class="avatar" id="av">IS</div>
+    <div class="uname" id="uname">Admin</div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div class="main">
+    <div class="top"><div class="search">🔍 SEARCH ...</div><button id="logout">Logout</button></div>
+    <div class="content" id="view"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const BASE_MODELS=["PNVE","MIJO","GT06","FMB920","V5","AIS140","RFID","E-LOCK","VIDEO CAMERA"];
+let MODELS=BASE_MODELS.slice();
+const baseType=m=>m==="RFID"?"RFID":m==="VIDEO CAMERA"?"Camera":m==="E-LOCK"?"Lock":"GPS";
+const modelType=m=>{const c=store.get("iot_models").find(x=>x.name===m);return c?c.type:baseType(m);};
+function loadModels(){MODELS=BASE_MODELS.concat(store.get("iot_models").map(x=>x.name).filter(n=>!BASE_MODELS.includes(n)));}
+const USER_TYPES=["Admin","Sub Admin","User"];
+const myType=()=>sessionStorage.getItem("iot_type")||"Admin";
+const MENU=[
+ {n:"Dashboard"},{n:"Device Models"},{n:"Devices"},{n:"Production Portal"},
+ {n:"Device Configuration",sub:["Change Firmware","Command List","Send Command","Send Bulk Command"]},
+ {n:"Firmware Manager"},
+ {n:"Remote Terminal",sub:["Session List","New Session"]},
+ {n:"Repair Portal"},{n:"Logs"},{n:"Users"}];
+const $=id=>document.getElementById(id);
+
+/* login */
+$("lform").onsubmit=e=>{e.preventDefault();
+  const u=$("uid").value.trim(),p=$("pwd").value;let t=null;
+  if(u==="Admin"&&p==="Admin123")t="Admin";
+  else{const f=store.get("iot_users").find(x=>x.uid===u&&x.pwd===p);if(f)t=f.type;}
+  if(t){sessionStorage.setItem("iot_auth","1");sessionStorage.setItem("iot_user",u);sessionStorage.setItem("iot_type",t);start();}
+  else $("err").textContent="Invalid Login ID or Password";};
+$("logout").onclick=()=>{sessionStorage.removeItem("iot_auth");location.reload();};
+
+function start(){$("login").classList.add("hidden");$("app").classList.remove("hidden");
+  $("uname").textContent=who()+" ("+myType()+")";$("av").textContent=who().slice(0,2).toUpperCase();route();}
+function route(){
+  loadModels();
+  clearInterval(window._tt);clearInterval(window._td);if(window._ws){try{window._ws.close()}catch(e){}window._ws=null;}
+  const p=decodeURIComponent(location.hash.slice(1))||"Dashboard";
+  $("nav").innerHTML=MENU.filter(m=>m.n!=="Users"||myType()==="Admin").map(m=>{
+    const open=m.n===p||(m.sub&&m.sub.includes(p))||(m.n==="Devices"&&p==="Add Device")||(m.n==="Device Models"&&p==="Add Model")||(m.n==="Remote Terminal"&&p.startsWith("Terminal/"));
+    let h=`<a class="${open?'active':''}" href="#${encodeURIComponent(m.sub?m.sub[0]:m.n)}">${m.n}${m.sub?' ▾':''}</a>`;
+    if(m.sub&&open)h+=m.sub.map(s=>`<a class="sub ${s===p?'active':''}" href="#${encodeURIComponent(s)}">${s}</a>`).join("");
+    return h;}).join("");
+  const PAGES={"Dashboard":dash,"Device Models":models,"Change Firmware":fwPage,"Command List":cmdList,"Send Command":sendCmd,
+    "Send Bulk Command":bulkCmd,"Session List":sessList,"New Session":newSess,"Devices":devPage,"Add Device":addDev,"Add Model":addModel,"Users":usersPage};
+  $("view").innerHTML=p.startsWith("Terminal/")?termPage(p.slice(9)):PAGES[p]?PAGES[p]():`<h1>${p}</h1><div class="panel"><div class="soon">No data available</div></div>`;
+}
+window.onhashchange=()=>{if(sessionStorage.getItem("iot_auth"))route();};
+
+/* dashboard */
+function dash(){
+  const devs=store.get("iot_dev"),days=[],keys=[];
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.getDate()+" "+d.toLocaleString("en",{month:"short"}));keys.push(d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()));}
+  const cnt=keys.map(k=>devs.filter(x=>x.at.slice(0,10)===k).length),mx=Math.max(4,...cnt),gy=v=>150-(v/mx)*120,gx=i=>50+i*(560/13);
+  const mc=MODELS.map(m=>devs.filter(x=>x.type===m).length),mm=Math.max(1,...mc);
+  const monthN=devs.filter(x=>x.at.slice(0,7)===ts().slice(0,7)).length;
+  const pts=cnt.map((v,i)=>gx(i)+","+gy(v)).join(" ");
+  const line=`<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6366f1" stop-opacity=".45"/><stop offset="1" stop-color="#6366f1" stop-opacity="0"/></linearGradient></defs>
+  <line x1="50" y1="30" x2="610" y2="30" stroke="#eef1f6"/><line x1="50" y1="90" x2="610" y2="90" stroke="#eef1f6"/><line x1="50" y1="150" x2="610" y2="150" stroke="#cbd5e1"/>
+  <text x="10" y="34">${mx}</text><text x="18" y="94">${Math.round(mx/2)}</text><text x="30" y="154">0</text>
+  <polygon points="50,150 ${pts} 610,150" fill="url(#ag)"/>
+  <polyline points="${pts}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>`+
+  cnt.map((v,i)=>`<circle cx="${gx(i)}" cy="${gy(v)}" r="3.5" fill="#fff" stroke="#6366f1" stroke-width="2"/>`).join("")+
+  days.map((d,i)=>i%2===0?`<text x="${gx(i)-12}" y="172">${d}</text>`:"").join("");
+  const bars=MODELS.map((m,i)=>`<div class="hb"><span class="nm">${esc(m)}</span><span class="tr"><i style="width:${mc[i]?Math.max(4,mc[i]/mm*100):0}%"></i></span><b>${mc[i]}</b></div>`).join("");
+  const kp=(bg,wm,n,l)=>`<div class="kpi" style="background:${bg}"><div class="wm">${wm}</div><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const hc=(c,e,n,l)=>`<div class="hc" style="border-color:${c}"><div><div class="n">${n}</div><div class="l">${l}</div></div><div class="e">${e}</div></div>`;
+  return `<h1>Dashboard <small>» Fleet Overview</small></h1>
+  <div class="hero"><div><h2>Welcome back, ${esc(who())} 👋</h2><p>Here is the live summary of your device fleet.</p></div><span class="pill">${new Date().toDateString()}</span></div>
+  <div class="kpis">
+    ${kp("linear-gradient(135deg,#3b82f6,#1d4ed8)","▣",devs.length,"Total devices")}
+    ${kp("linear-gradient(135deg,#10b981,#047857)","✔",'0 <small>(0%)</small>',"Tested OK")}
+    ${kp("linear-gradient(135deg,#f59e0b,#d97706)","▦",monthN,"Added this month")}
+    ${kp("linear-gradient(135deg,#8b5cf6,#6d28d9)","≣",MODELS.length,"Device models")}
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Fleet Growth (Last 14 Days)</h3><div class="body"><svg viewBox="0 0 630 185" width="100%">${line}</svg></div></div>
+    <div class="panel"><h3>Fleet by Model</h3><div class="body" style="max-height:230px;overflow:auto">${bars}</div></div>
+  </div>
+  <div class="sect">SERVICE &amp; FLEET HEALTH</div>
+  <div class="hcs">
+    ${hc("#06b6d4","⚙",0,"In service")}${hc("#10b981","✔",0,"Healthy")}${hc("#ec4899","⚠",0,"Faulty")}${hc("#f97316","%","0%","Uptime")}
+  </div>`;
+}
+
+/* device models */
+function models(){
+  const now=new Date().toISOString().slice(0,19).replace("T"," "),cust=store.get("iot_models").map(x=>x.name);
+  return `<div class="hrow"><h1>Device Models <small>» list</small></h1><button class="addb" onclick="go('Add Model')">＋ Add Model</button></div>
+  <div class="panel"><h3>Models</h3><table>
+  <tr><th>ID</th><th>NAME</th><th>TYPE</th><th>LICENSES</th><th>LAST UPDATED</th><th>ACTION</th></tr>
+  ${MODELS.map((m,i)=>`<tr><td style="color:#2563eb">${i+1}</td><td>${esc(m)}</td><td><span class="tag">${esc(modelType(m))}</span></td><td>0</td><td><span class="dot"></span>${now}</td><td>${cust.includes(m)?`<button class="del" onclick="delModel(${i})">🗑</button>`:""}</td></tr>`).join("")}
+  </table></div>`;
+}
+function addModel(){return `<h1>Device Models <small>» Add</small></h1>
+<div class="panel"><h3>Add New Device Model</h3><div class="body fm">
+<label>Model Name</label><input id="m_name" placeholder="e.g. TK103" maxlength="30">
+<label>Model Type</label><select id="m_type"><option>GPS</option><option>RFID</option><option>Camera</option><option>Lock</option><option>Other</option></select>
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doAddModel()">✔ SAVE</button><button class="b2" onclick="route()">↺ RESET</button><button class="b3" onclick="go('Device Models')">✖ CANCEL</button></div></div></div>`;}
+function doAddModel(){
+  const n=val("m_name").toUpperCase(),t=$("m_type").value;
+  if(!n)return flash("Enter model name",0);
+  if(MODELS.some(m=>m.toUpperCase()===n))return flash("This model already exists",0);
+  const a=store.get("iot_models");a.push({name:n,type:t,by:who(),at:ts()});store.set("iot_models",a);go("Device Models");
+}
+function delModel(i){const n=MODELS[i];if(confirm("Delete model "+n+"?")){store.set("iot_models",store.get("iot_models").filter(x=>x.name!==n));route();}}
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return[]}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const pad=n=>String(n).padStart(2,"0");
+const ts=d=>{d=d||new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());};
+const who=()=>sessionStorage.getItem("iot_user")||"Admin";
+const go=p=>{location.hash="#"+encodeURIComponent(p);};
+const val=id=>$(id).value.trim();
+const isImei=s=>/^\d{15}$/.test(s);
+const typeSel=id=>`<select id="${id}"><option value="">Select Device Type</option>${MODELS.map(m=>`<option>${m}</option>`).join("")}</select>`;
+const flash=(t,ok)=>{const e=$("msg");e.className="msg "+(ok?"ok":"bad");e.textContent=t;};
+const actions=(fn,label)=>`<div class="btns"><button class="b1" onclick="${fn}">✔ ${label}</button><button class="b2" onclick="route()">↺ RESET</button><button class="b3" onclick="go('Dashboard')">✖ CANCEL</button></div>`;
+const NOINV="Device not found in inventory. Please contact your Administrator to register this device first.";
+const findDev=k=>store.get("iot_dev").find(d=>d.imei===k||(d.uid&&d.uid!=="-"&&d.uid===k));
+/* returns error text or "" – device must exist in Devices list and match the selected model */
+function chkDev(k,type){const d=findDev(k);if(!d)return "Device “"+k+"” was not found in inventory. Please contact your Administrator to register this device first.";if(type&&d.type!==type)return k+" is registered as model "+d.type+", not "+type;return"";}
+let _id=0;
+const mkCmd=(type,imei,cmd)=>({id:Date.now()*1000+(_id++),type,imei,uid:"-",iccid:"-",cmd,by:who(),at:ts(),status:"Not sent"});
+
+/* ---------- Change Firmware ---------- */
+const VERS=["1.0.0","1.0.1","1.1.0","2.0.0","2.0.6"];
+function fwPage(){return `<h1>Device Configuration <small>» Change Firmware</small></h1>
+<div class="panel"><h3>Change Device Firmware</h3><div class="body fm">
+<label>Device Type</label>${typeSel("f_type")}
+<label>Device IMEI <span class="hint">(one IMEI per line)</span></label><textarea id="f_imei" rows="4" placeholder="359926590709971"></textarea>
+<label>Select Version</label><select id="f_ver"><option value="">Select Version</option>${VERS.map(v=>`<option>${v}</option>`).join("")}</select>
+<div id="msg" class="msg"></div>${actions("doFw()","SUBMIT")}</div></div>`;}
+function doFw(){
+  const t=val("f_type"),v=val("f_ver"),l=$("f_imei").value.split(/[\s,;]+/).filter(Boolean);
+  if(!t)return flash("Select device type",0);
+  if(!l.length)return flash("Enter at least one IMEI",0);
+  const bad=l.find(x=>!isImei(x));if(bad)return flash("Invalid IMEI: "+bad+" (15 digits required)",0);
+  const miss=l.filter(x=>chkDev(x,t));
+  if(miss.length)return flash(miss.length+" device(s) not allowed: "+miss.slice(0,3).map(x=>chkDev(x,t)).join("; ")+(miss.length>3?" ...":"")+" Only devices in the inventory can be updated.",0);
+  if(!v)return flash("Select version",0);
+  const a=store.get("iot_fw");a.push({t,v,l,by:who(),at:ts()});store.set("iot_fw",a);
+  flash("Firmware "+v+" queued for "+l.length+" "+t+" device(s)",1);
+}
+
+/* ---------- Command List ---------- */
+const PG={dev:{n:10,p:1,q:""},cmd:{n:10,p:1,q:""}};
+const HEAD={cmd:["IMEI / UID / ICCID","DEVICE TYPE","COMMAND","ADDED BY","CREATED AT","STATUS","ACTION"],
+  dev:["IMEI","UID","ICCID","DEVICE MODEL","ADDED BY","ADDED AT","ACTION"]};
+const EMPTY={cmd:"No commands found",dev:"No devices added yet. Use “Add Device” to add one."};
+const ROW={
+ cmd:(c,i)=>`<tr><td>${i+1}</td><td>${esc(c.imei)}<br><small>UID: ${esc(c.uid)}</small><br><small>ICCID: ${esc(c.iccid)}</small></td><td>${esc(c.type)}</td><td style="word-break:break-all">${esc(c.cmd)}</td><td>${esc(c.by)}</td><td>${c.at}</td><td><span class="tag ${c.status==="Sent"?"g":"r"}">${c.status}</span></td><td><button class="del" onclick="delCmd(${c.id})">🗑</button></td></tr>`,
+ dev:(d,i)=>`<tr><td>${i+1}</td><td>${esc(d.imei)}</td><td>${esc(d.uid)}</td><td>${esc(d.iccid)}</td><td><span class="tag">${esc(d.type)}</span></td><td>${esc(d.by)}</td><td>${d.at}</td><td><button class="del" onclick="delDev(${d.id})">🗑</button></td></tr>`};
+function pgSize(k,v){PG[k].n=+v;PG[k].p=1;drawList(k);}
+function pgGo(k,d){PG[k].p+=d;drawList(k);}
+function pgQ(k,v){PG[k].q=v;PG[k].p=1;drawList(k);}
+function drawList(k){
+  const e=$("lst");if(!e)return;
+  const s=PG[k],all=store.get(k==="dev"?"iot_dev":"iot_cmd"),q=s.q.trim().toLowerCase();
+  const f=q?all.filter(x=>Object.values(x).join(" ").toLowerCase().includes(q)):all;
+  const pages=Math.max(1,Math.ceil(f.length/s.n));if(s.p>pages)s.p=pages;
+  const st=(s.p-1)*s.n,rows=f.slice(st,st+s.n);
+  const sel=`<select class="pgsel" title="Rows per page" onchange="pgSize('${k}',this.value)">${[10,20,50,100,500].map(n=>`<option value="${n}" ${n===s.n?"selected":""}>${n}</option>`).join("")}</select>`;
+  e.innerHTML=`<table><tr><th>SR. NO.<br>${sel}</th>${HEAD[k].map(h=>`<th>${h}</th>`).join("")}</tr>
+${rows.length?rows.map((x,i)=>ROW[k](x,st+i)).join(""):`<tr><td colspan="${HEAD[k].length+1}" class="soon">${EMPTY[k]}</td></tr>`}</table>
+<div class="pgbar"><span>Showing ${f.length?st+1:0}–${st+rows.length} of ${f.length}</span>
+<span><button class="b2 sm" ${s.p<=1?"disabled":""} onclick="pgGo('${k}',-1)">‹ Prev</button> &nbsp;Page ${s.p} / ${pages}&nbsp; <button class="b2 sm" ${s.p>=pages?"disabled":""} onclick="pgGo('${k}',1)">Next ›</button></span></div>`;
+}
+function cmdList(){PG.cmd.q="";setTimeout(()=>drawList("cmd"),0);
+return `<h1>Device Commands <small>» List</small></h1>
+<div class="panel"><div class="body"><input class="srch" placeholder="Search commands..." oninput="pgQ('cmd',this.value)"></div><div id="lst"></div></div>`;}
+function filt(q){q=q.toLowerCase();document.querySelectorAll("#ct tr").forEach((r,i)=>{if(i)r.style.display=r.textContent.toLowerCase().includes(q)?"":"none";});}
+function delCmd(id){store.set("iot_cmd",store.get("iot_cmd").filter(c=>c.id!==id));route();}
+
+/* ---------- Send Command ---------- */
+function sendCmd(){return `<h1>Device Commands <small>» Send</small></h1>
+<div class="panel"><h3>Send New Command</h3><div class="body fm">
+<label>Device Type</label>${typeSel("c_type")}
+<label>Enter IMEI</label><input id="c_imei" maxlength="15" placeholder="15 digit IMEI">
+<label>Enter Command</label><input id="c_cmd" placeholder="Command">
+<div id="msg" class="msg"></div>${actions("doSend()","SEND")}</div></div>`;}
+function doSend(){
+  const t=val("c_type"),i=val("c_imei"),c=val("c_cmd");
+  if(!t)return flash("Select device type",0);
+  if(!isImei(i))return flash("Enter valid 15 digit IMEI",0);
+  const er=chkDev(i,t);if(er)return flash(er,0);
+  if(!c)return flash("Enter command",0);
+  const a=store.get("iot_cmd");a.push(mkCmd(t,i,c));store.set("iot_cmd",a);go("Command List");
+}
+
+/* ---------- Bulk Command ---------- */
+function bulkCmd(){return `<h1>Device Commands <small>» Bulk Send</small></h1>
+<div class="panel"><h3>Send Bulk Commands</h3><div class="body fm">
+<label>Device Type</label>${typeSel("b_type")}
+<label>Upload Excel File <span class="hint">(.xlsx, .xls or .csv)</span></label><input type="file" id="b_file" accept=".xlsx,.xls,.csv">
+<div class="note"><b>Excel format:</b> Row 1 must be the header. Column A = <code>IMEI</code> (15 digits), Column B = <code>COMMAND</code>. One device per row.
+<table class="mini"><tr><th>IMEI</th><th>COMMAND</th></tr><tr><td>359926590709971</td><td>SET MOD:1</td></tr><tr><td>359926590709963</td><td>SET MOD:1</td></tr></table>
+<button class="b2" onclick="tpl()">⬇ DOWNLOAD TEMPLATE</button></div>
+<div id="msg" class="msg"></div>${actions("doBulk()","SUBMIT")}</div></div>`;}
+function tpl(){
+  const rows=[["IMEI","COMMAND"],["359926590709971","SET MOD:1"],["359926590709963","SET MOD:1"]];
+  if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Commands");XLSX.writeFile(wb,"bulk_command_template.xlsx");}
+  else{const b=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="bulk_command_template.csv";a.click();}
+}
+async function doBulk(){
+  const t=val("b_type"),f=$("b_file").files[0];
+  if(!t)return flash("Select device type",0);
+  if(!f)return flash("Choose an Excel file",0);
+  let rows;
+  try{
+    if(/\.csv$/i.test(f.name)){rows=(await f.text()).split(/\r?\n/).map(l=>l.split(/,(.*)/s).slice(0,2));}
+    else{if(!window.XLSX)return flash("Excel reader not loaded (check internet) – use a .csv file",0);
+      const wb=XLSX.read(await f.arrayBuffer());rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false});}
+  }catch(e){return flash("Could not read the file",0);}
+  rows=rows.slice(1).filter(r=>r&&r[0]);
+  const good=[],noinv=[],wrong=[];let bad=0;
+  rows.forEach(r=>{const i=String(r[0]).trim(),c=String(r[1]||"").trim();
+    if(!(isImei(i)&&c)){bad++;return;}
+    const d=findDev(i);
+    if(!d)noinv.push(i);else if(d.type!==t)wrong.push(i);else good.push(mkCmd(t,i,c));});
+  const skipMsg=(noinv.length?" | "+noinv.length+" device(s) not found in inventory and skipped ("+noinv.slice(0,3).join(", ")+(noinv.length>3?" ...":"")+"). Please contact your Administrator.":"")+
+    (wrong.length?" | "+wrong.length+" device(s) belong to a different model and were skipped":"")+(bad?" | "+bad+" invalid row(s) skipped":"");
+  if(!good.length)return flash("No command sent."+(noinv.length?" "+NOINV:" Check the template format.")+skipMsg,0);
+  store.set("iot_cmd",store.get("iot_cmd").concat(good));
+  flash(good.length+" command(s) added"+skipMsg,1);
+  setTimeout(()=>go("Command List"),skipMsg?4000:1500);
+}
+
+/* ---------- Remote Terminal ---------- */
+function newSess(){return `<h1>Remote Terminal <small>» Create</small></h1>
+<div class="panel"><h3>New Remote Terminal Session</h3><div class="body fm">
+<label>Device Type</label>${typeSel("s_type")}
+<label>Device IMEI / UID</label><input id="s_dev" placeholder="Enter IMEI or UID">
+<label>Remote Duration</label><select id="s_min">${[15,30,45,60,90,120].map(m=>`<option value="${m}" ${m===30?"selected":""}>${m} Minutes</option>`).join("")}</select>
+<div id="msg" class="msg"></div>${actions("doSess()","START")}</div></div>`;}
+function doSess(){
+  const t=val("s_type"),d=val("s_dev"),m=+$("s_min").value;
+  if(!t)return flash("Select device type",0);
+  if(!/^[A-Za-z0-9]{10,20}$/.test(d))return flash("Enter a valid IMEI or UID",0);
+  const er=chkDev(d,t);if(er)return flash(er,0);
+  const id=Date.now(),a=store.get("iot_sess");a.push({id,t,d,m,start:id,by:who()});store.set("iot_sess",a);go("Terminal/"+id);
+}
+function endSess(id){store.set("iot_sess",store.get("iot_sess").map(s=>s.id===id?Object.assign(s,{ended:Date.now()}):s));route();}
+function sessList(){const a=store.get("iot_sess"),n=Date.now();
+return `<h1>Remote Terminal <small>» Session List</small></h1>
+<div class="panel"><table><tr><th>SR. NO.</th><th>DEVICE TYPE</th><th>IMEI / UID</th><th>DURATION</th><th>STARTED</th><th>EXPIRES</th><th>STARTED BY</th><th>STATUS</th><th>ACTION</th></tr>
+${a.length?a.slice().reverse().map((s,i)=>{const end=s.start+s.m*60000,act=!s.ended&&n<end;
+ return `<tr><td>${i+1}</td><td>${esc(s.t)}</td><td>${esc(s.d)}</td><td>${s.m} min</td><td>${ts(new Date(s.start))}</td><td>${ts(new Date(end))}</td><td>${esc(s.by)}</td><td><span class="tag ${act?"g":"y"}">${act?"Active ("+Math.ceil((end-n)/60000)+" min left)":s.ended?"Ended":"Expired"}</span></td><td>${act?`<button class="del" style="background:#dbeafe" onclick="go('Terminal/${s.id}')">Open</button> <button class="del" onclick="endSess(${s.id})">End</button>`:""}</td></tr>`;}).join(""):`<tr><td colspan="9" class="soon">No sessions yet</td></tr>`}
+</table></div>`;}
+
+/* ---------- Devices ---------- */
+function devPage(){const a=store.get("iot_dev"),by=MODELS.map(m=>[m,a.filter(x=>x.type===m).length]).filter(x=>x[1]);
+PG.dev.q="";setTimeout(()=>drawList("dev"),0);
+return `<div class="hrow"><h1>Devices <small>» List</small></h1><button class="addb" onclick="go('Add Device')">＋ Add Device</button></div>
+<div class="cards"><div class="card"><div class="ic" style="background:#3b82f6">▣</div><div><div class="n">${a.length}</div><div class="l">total devices</div></div></div></div>
+${by.length?`<div class="chips2">${by.map(x=>`<span class="tag">${x[0]}: ${x[1]}</span>`).join("")}</div>`:""}
+<div class="panel"><div class="body"><input class="srch" placeholder="Search devices..." oninput="pgQ('dev',this.value)"></div><div id="lst"></div></div>`;}
+function addDev(){return `<h1>Devices <small>» Add</small></h1>
+<div class="panel"><h3>Add New Device</h3><div class="body fm">
+<label>Device Model</label>${typeSel("d_type")}
+<label>Device IMEI</label><input id="d_imei" maxlength="15" placeholder="15 digit IMEI">
+<label>Device UID <span class="hint">(optional)</span></label><input id="d_uid" placeholder="UID">
+<label>ICCID <span class="hint">(optional)</span></label><input id="d_iccid" placeholder="SIM ICCID">
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doAdd()">✔ SAVE</button><button class="b2" onclick="route()">↺ RESET</button><button class="b3" onclick="go('Devices')">✖ CANCEL</button></div>
+<div class="sep"></div>
+<h3 style="margin-top:20px;font-weight:500;color:#0f172a">OR Upload Excel File</h3>
+<label>Upload Excel File <span class="hint">(.xlsx, .xls or .csv)</span></label><input type="file" id="d_file" accept=".xlsx,.xls,.csv">
+<div class="note"><b>Excel format:</b> Row 1 = header. Columns: <code>IMEI</code> (15 digits), <code>UID</code>, <code>ICCID</code>, <code>MODEL</code>. UID, ICCID aur MODEL optional hain. Agar MODEL column khali ho to upar select kiya hua Device Model use hoga.
+<table class="mini"><tr><th>IMEI</th><th>UID</th><th>ICCID</th><th>MODEL</th></tr><tr><td>359926590709971</td><td>UID001</td><td>8991000000000000001</td><td>GT06</td></tr></table>
+<button class="b2" onclick="devTpl()">⬇ DOWNLOAD TEMPLATE</button></div>
+<div class="btns"><button class="b1" onclick="doDevUpload()">⬆ UPLOAD &amp; ADD</button></div>
+<div id="msg2" class="msg"></div></div></div>`;}
+function devTpl(){
+  const rows=[["IMEI","UID","ICCID","MODEL"],["359926590709971","UID001","8991000000000000001","GT06"],["359926590709963","UID002","8991000000000000002","FMB920"]];
+  if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Devices");XLSX.writeFile(wb,"device_template.xlsx");}
+  else{const b=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="device_template.csv";a.click();}
+}
+async function doDevUpload(){
+  const f=$("d_file").files[0],def=val("d_type"),m2=(t,ok)=>{const e=$("msg2");e.className="msg "+(ok?"ok":"bad");e.textContent=t;};
+  if(!f)return m2("Choose an Excel file",0);
+  let rows;
+  try{
+    if(/\.csv$/i.test(f.name))rows=(await f.text()).split(/\r?\n/).map(l=>l.split(","));
+    else{if(!window.XLSX)return m2("Excel reader not loaded (check internet) – use a .csv file",0);
+      const wb=XLSX.read(await f.arrayBuffer());rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false});}
+  }catch(e){return m2("Could not read the file",0);}
+  rows=rows.slice(1).filter(r=>r&&r[0]);
+  const all=store.get("iot_dev"),seen=new Set(all.map(x=>x.imei));let ok=0,bad=0,dup=0;
+  rows.forEach(r=>{
+    const imei=String(r[0]).trim(),uid=String(r[1]||"").trim(),ic=String(r[2]||"").trim(),mr=String(r[3]||"").trim().toUpperCase();
+    const mod=MODELS.find(x=>x.toUpperCase()===mr)||(!mr?def:"");
+    if(!isImei(imei)||!mod){bad++;return;}
+    if(seen.has(imei)){dup++;return;}
+    seen.add(imei);all.push({id:Date.now()*1000+ok,type:mod,imei,uid:uid||"-",iccid:ic||"-",by:who(),at:ts()});ok++;
+  });
+  if(!ok)return m2("No valid rows added. "+(bad?bad+" invalid, ":"")+(dup?dup+" duplicate":"")+" – check template / select Device Model.",0);
+  store.set("iot_dev",all);
+  m2(ok+" device(s) added"+(dup?", "+dup+" duplicate skipped":"")+(bad?", "+bad+" invalid row(s) skipped":""),1);
+  setTimeout(()=>go("Devices"),1600);
+}
+function doAdd(){
+  const t=val("d_type"),i=val("d_imei"),u=val("d_uid"),c=val("d_iccid"),a=store.get("iot_dev");
+  if(!t)return flash("Select device model",0);
+  if(!isImei(i))return flash("Enter valid 15 digit IMEI",0);
+  if(a.some(x=>x.imei===i))return flash("This IMEI is already added",0);
+  a.push({id:Date.now(),type:t,imei:i,uid:u||"-",iccid:c||"-",by:who(),at:ts()});store.set("iot_dev",a);go("Devices");
+}
+function delDev(id){if(confirm("Delete this device?")){store.set("iot_dev",store.get("iot_dev").filter(d=>d.id!==id));route();}}
+
+
+/* ---------- Users ---------- */
+function usersPage(){
+  if(myType()!=="Admin")return `<h1>Users</h1><div class="panel"><div class="soon">Only Admin can manage users</div></div>`;
+  const a=store.get("iot_users");
+  return `<h1>Users <small>» Manage</small></h1>
+<div class="panel"><h3>Add New User</h3><div class="body fm">
+<label>User ID</label><input id="u_id" placeholder="Enter User ID" maxlength="30" autocomplete="off">
+<label>Password</label><input id="u_pw" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+<label>User Type</label><select id="u_type"><option value="">Select User Type</option>${USER_TYPES.map(t=>`<option>${t}</option>`).join("")}</select>
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doUser()">✔ ADD USER</button><button class="b2" onclick="route()">↺ RESET</button></div></div></div>
+<div class="panel" style="margin-top:18px"><h3>User List</h3><table><tr><th>SR. NO.</th><th>USER ID</th><th>USER TYPE</th><th>ADDED BY</th><th>ADDED AT</th><th>ACTION</th></tr>
+<tr><td>0</td><td>Admin</td><td><span class="tag p">Admin</span></td><td>System</td><td>-</td><td></td></tr>
+${a.map((u,i)=>`<tr><td>${i+1}</td><td>${esc(u.uid)}</td><td><span class="tag ${u.type==="Admin"?"p":u.type==="Sub Admin"?"y":""}">${esc(u.type)}</span></td><td>${esc(u.by)}</td><td>${u.at}</td><td><button class="del" onclick="delUser(${u.id})">🗑</button></td></tr>`).join("")}
+</table></div>`;
+}
+function doUser(){
+  const u=val("u_id"),p=$("u_pw").value,t=$("u_type").value,a=store.get("iot_users");
+  if(u.length<3)return flash("User ID must be at least 3 characters",0);
+  if(u.toLowerCase()==="admin"||a.some(x=>x.uid.toLowerCase()===u.toLowerCase()))return flash("This User ID already exists",0);
+  if(p.length<6)return flash("Password must be at least 6 characters",0);
+  if(!t)return flash("Select user type",0);
+  a.push({id:Date.now(),uid:u,pwd:p,type:t,by:who(),at:ts()});store.set("iot_users",a);route();
+}
+function delUser(id){if(confirm("Delete this user?")){store.set("iot_users",store.get("iot_users").filter(u=>u.id!==id));route();}}
+
+/* ---------- Remote Terminal console ---------- */
+const RT={ip:"154.210.168.75",port:8900,ws:""}; // ws: backend WebSocket URL (e.g. "ws://yourserver:8901") – blank = demo only
+function tp(t,b){const e=$("term");if(!e)return;const d=document.createElement("div");d.textContent=t;if(b)d.style.fontWeight="700";e.appendChild(d);e.scrollTop=e.scrollHeight;}
+function termPage(id){
+  const s=store.get("iot_sess").find(x=>String(x.id)===id);
+  if(!s)return `<h1>Remote Terminal</h1><div class="panel"><div class="soon">Session not found</div></div>`;
+  setTimeout(()=>termInit(s),0);
+  return `<h1>Remote Terminal <small>» ${esc(s.d)}</small></h1>
+<div class="panel"><h3 class="th">Remote Terminal <span><button class="ib" title="Fullscreen" onclick="termFs()">⛶</button><button class="ib" title="Back" onclick="go('Session List')">←</button><button class="ib red" title="Stop session" onclick="termStop(${s.id})">■</button></span></h3>
+<div id="term" class="term"></div></div>
+<div class="info"><table class="it">
+<tr><td>Server IP</td><td>${RT.ip}</td></tr><tr><td>Port</td><td>${RT.port}</td></tr>
+<tr><td>Command</td><td><code>rdbg=${RT.ip},${RT.port}</code> <button class="b2 sm" onclick="copyCmd()">Copy</button></td></tr>
+<tr><td>Session</td><td>${esc(s.t)} · ${s.m} min · <b id="left"></b></td></tr></table>
+<div class="note" style="margin-top:10px">Upar wali <b>Command</b> device ko bhejo. Device server se connect hote hi uske logs is console me aane lagenge.</div>
+<div class="btns"><button class="b2" onclick="termDemo()">▶ Simulate device connect (demo)</button></div></div>`;
+}
+function termInit(s){
+  window._cur=s;const end=s.start+s.m*60000;
+  tp("IOT Solution Remote Terminal v1.0",1);tp("Waiting for device connection ...",1);
+  if(s.ended||Date.now()>=end){tp("Session is no longer active.");const e=$("left");if(e)e.textContent="ended";return;}
+  const tick=()=>{const l=end-Date.now(),e=$("left");if(!e)return;
+    if(l<=0){e.textContent="expired";tp("Session expired.",1);clearInterval(window._tt);clearInterval(window._td);return;}
+    e.textContent=Math.floor(l/60000)+"m "+pad(Math.floor(l%60000/1000))+"s left";};
+  tick();window._tt=setInterval(tick,1000);
+  if(RT.ws){try{const w=new WebSocket(RT.ws+"?id="+encodeURIComponent(s.d));window._ws=w;
+    w.onopen=()=>tp("Connected to server");w.onmessage=m=>tp(m.data);w.onclose=()=>tp("Connection closed");}catch(e){tp("Server connection failed");}}
+}
+function termDemo(){
+  clearInterval(window._td);const s=window._cur,L=["GSM: registered, CSQ 22","GPS: fix OK, sats 9","TCP: connected to server","FOTA Check: No Update. Current Version: 2.0.6","Packet sent, ACK received","Ignition: ON","Battery: 12.4V"];
+  tp("[DEMO] Device connected: "+s.d,1);let i=0;
+  window._td=setInterval(()=>{tp("[DEMO] "+ts().slice(11)+"  "+L[i++%L.length]);if(i>30)clearInterval(window._td);},1200);
+}
+function termStop(id){store.set("iot_sess",store.get("iot_sess").map(s=>s.id===id?Object.assign(s,{ended:Date.now()}):s));go("Session List");}
+function termFs(){const e=$("term");if(e&&e.requestFullscreen)e.requestFullscreen();}
+function copyCmd(){try{navigator.clipboard.writeText("rdbg="+RT.ip+","+RT.port)}catch(e){}}
+
+
+/* ---------- 3D live PCB background (login) ---------- */
+function pcb3d(){
+  const host=$("pcb3d");if(!host||!window.THREE)return;
+  let seed=7;const R=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+  const W=()=>host.clientWidth||innerWidth,H=()=>host.clientHeight||innerHeight;
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(devicePixelRatio||1,2));r.setSize(W(),H());host.appendChild(r.domElement);
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(42,W()/H(),.1,200);
+  sc.add(new THREE.AmbientLight(0xaabbd8,1.35));
+  const dl=new THREE.DirectionalLight(0xffffff,1.3);dl.position.set(6,14,8);sc.add(dl);
+  const pl=new THREE.PointLight(0x22d3ee,1.4,50);pl.position.set(-8,5,5);sc.add(pl);
+  const pl2=new THREE.PointLight(0xa855f7,1.1,50);pl2.position.set(9,4,-5);sc.add(pl2);
+  const g=new THREE.Group();sc.add(g);
+  const BW=24,BH=14;
+  const board=new THREE.Mesh(new THREE.BoxGeometry(BW,.5,BH),new THREE.MeshPhongMaterial({color:0x0f8a55,shininess:70,specular:0x66aa88}));g.add(board);
+  const gold=new THREE.MeshPhongMaterial({color:0xd8b24a,emissive:0x4a3a10,shininess:90});
+  const bm=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);g.add(m);return m;};
+  const paths=[];
+  // traces
+  for(let n=0;n<46;n++){
+    let x=(R()-.5)*(BW-3),z=(R()-.5)*(BH-3),horiz=R()>.5;const p=[new THREE.Vector3(x,.3,z)];
+    for(let s=0;s<4;s++){
+      const L=(1.5+R()*5)*(R()>.5?1:-1);
+      if(horiz)x=Math.max(-BW/2+1,Math.min(BW/2-1,x+L));else z=Math.max(-BH/2+1,Math.min(BH/2-1,z+L));
+      const q=new THREE.Vector3(x,.3,z),a=p[p.length-1];
+      if(a.distanceTo(q)>.2){
+        const len=a.distanceTo(q),mid=a.clone().add(q).multiplyScalar(.5);
+        bm(horiz?len+.1:.1,.05,horiz?.1:len+.1,gold,mid.x,.28,mid.z);p.push(q);
+      }
+      horiz=!horiz;
+    }
+    const end=p[p.length-1];const pad=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.06,14),gold);pad.position.set(end.x,.29,end.z);g.add(pad);
+    if(p.length>1)paths.push(p);
+  }
+  // chips
+  const black=new THREE.MeshPhongMaterial({color:0x1b2433,shininess:100,specular:0x6688aa});
+  const pinM=new THREE.MeshPhongMaterial({color:0xcfd6df,shininess:80});
+  function chip(x,z,w,d,h){
+    bm(w,h,d,black,x,.25+h/2,z);
+    bm(w*.25,.02,.25,new THREE.MeshBasicMaterial({color:0x334155}),x-w*.25,.27+h,z-d*.25);
+    for(let i=0;i<Math.floor(w/.55);i++){const px=x-w/2+.35+i*.55;bm(.16,.06,.34,pinM,px,.3,z-d/2-.15);bm(.16,.06,.34,pinM,px,.3,z+d/2+.15);}
+    for(let i=0;i<Math.floor(d/.55);i++){const pz=z-d/2+.35+i*.55;bm(.34,.06,.16,pinM,x-w/2-.15,.3,pz);bm(.34,.06,.16,pinM,x+w/2+.15,.3,pz);}
+  }
+  chip(-2,0,4,4,.5);chip(6.5,-2.5,2.6,2.6,.4);chip(-8,3,2.4,1.8,.35);chip(3,3.5,2,2,.35);chip(-7.5,-3.5,2.8,1.6,.35);
+  // passives
+  const resM=new THREE.MeshPhongMaterial({color:0x1f2937}),capM=new THREE.MeshPhongMaterial({color:0xb45309,shininess:60});
+  for(let i=0;i<34;i++){const x=(R()-.5)*(BW-2),z=(R()-.5)*(BH-2);
+    if(R()>.4){bm(.5,.18,.25,resM,x,.34,z);bm(.12,.2,.27,pinM,x-.25,.34,z);bm(.12,.2,.27,pinM,x+.25,.34,z);}
+    else{const c=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.5,16),capM);c.position.set(x,.5,z);g.add(c);}}
+  // LEDs
+  const leds=[];[0x22d3ee,0x22c55e,0xf43f5e,0xfacc15,0xa855f7].forEach((c,i)=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.2,12,12),new THREE.MeshBasicMaterial({color:c}));m.position.set(-10+i*.9,.5,5.5);g.add(m);leds.push(m);});
+  // data pulses
+  const pulses=paths.map((p,i)=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.17,10,10),new THREE.MeshBasicMaterial({color:i%2?0x22d3ee:0xfde047}));g.add(m);
+    const segs=[];let tot=0;for(let k=1;k<p.length;k++){const l=p[k].distanceTo(p[k-1]);segs.push(l);tot+=l;}
+    return{m,p,segs,tot,t:R()*tot,sp:1.2+R()*2.2};});
+  // grid glow floor
+  const grid=new THREE.GridHelper(70,70,0x0ea5e9,0x1e3a8a);grid.position.y=-3;grid.material.opacity=.25;grid.material.transparent=true;sc.add(grid);
+  g.rotation.x=.55;g.scale.set(1.8,1.8,1.8);
+  function size(){r.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix();cam.position.set(0,W()/H()<1?30:18,W()/H()<1?40:25);cam.lookAt(0,0,0);}
+  size();addEventListener("resize",size);
+  const clk=new THREE.Clock();
+  (function loop(){
+    if($("login").classList.contains("hidden")){r.dispose();return;}
+    requestAnimationFrame(loop);const t=clk.getElapsedTime(),dt=Math.min(clk.getDelta(),.05)||.016;
+    g.rotation.y=Math.sin(t*.18)*.6;g.rotation.x=.5+Math.sin(t*.25)*.08;g.position.y=Math.sin(t*.6)*.25;
+    pl.position.x=-8+Math.sin(t*.5)*6;pl2.position.z=-5+Math.cos(t*.4)*6;
+    leds.forEach((l,i)=>{l.material.color.setScalar(1);l.scale.setScalar(.7+.5*Math.abs(Math.sin(t*2+i)));});
+    pulses.forEach(o=>{o.t=(o.t+o.sp*.016)%o.tot;let d=o.t,k=0;while(k<o.segs.length-1&&d>o.segs[k]){d-=o.segs[k];k++;}
+      o.m.position.lerpVectors(o.p[k],o.p[k+1],Math.min(1,d/o.segs[k]));o.m.position.y=.4;});
+    r.render(sc,cam);
+  })();
+}
+
+pcb3d();
+if(sessionStorage.getItem("iot_auth"))start();
+</script>
+</body>
+</html>
