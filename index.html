@@ -134,7 +134,51 @@ svg text{font-size:11px;fill:#94a3b8}
 .pgsel{margin-top:4px;padding:3px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;background:#fff;color:#334155;cursor:pointer}
 .pgbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid #eef1f6;font-size:13px;color:#64748b;flex-wrap:wrap;gap:8px}
 .pgbar button:disabled{opacity:.4;cursor:not-allowed}
-@media(max-width:800px){.side{display:none}}
+
+.panel{overflow-x:auto}
+#menuBtn,.ovl{display:none}
+.top .lt{display:flex;align-items:center;gap:12px;min-width:0}
+#fwh{overflow-x:auto}
+@media(max-width:800px){
+  .side{position:fixed;left:0;top:0;bottom:0;width:268px;z-index:50;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;box-shadow:none}
+  body.navopen .side{transform:none;box-shadow:6px 0 30px rgba(0,0,0,.4)}
+  .ovl{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:40}
+  body.navopen .ovl{display:block}
+  body.navopen{overflow:hidden}
+  #menuBtn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;font-size:20px;line-height:1}
+  .top{padding:0 14px;position:sticky;top:0;z-index:30}
+  .content{padding:14px}
+  h1{font-size:20px;margin-bottom:14px}
+  h1 small{font-size:13px}
+  .hero{padding:18px;border-radius:12px;margin-bottom:14px}
+  .hero h2{font-size:18px}
+  .kpis,.hcs,.cards{grid-template-columns:1fr 1fr;gap:10px}
+  .kpis{margin-bottom:14px}
+  .kpi{padding:14px;border-radius:12px}
+  .kpi .n{font-size:24px}
+  .kpi .wm{font-size:60px}
+  .hc{padding:12px 14px}
+  .hc .n{font-size:21px}
+  .card{padding:14px;gap:12px}
+  .card .n{font-size:24px}
+  .ic{width:44px;height:44px;font-size:19px}
+  .grid2{gap:14px}
+  .hb .nm{width:72px}
+  .panel h3{padding:14px 16px;font-size:16px}
+  .panel .body{padding:14px 16px}
+  .panel table:not(.mini):not(.it){min-width:620px}
+  th,td{padding:12px 14px}
+  .fm select,.fm input,.fm textarea{max-width:100%;font-size:16px}
+  .btns button{flex:1 1 auto}
+  .note{max-width:100%}
+  .term{height:60vh}
+  .srch{max-width:100%}
+  .lright{padding:34px 24px}
+  .lcard{min-height:0}
+}
+@media(max-width:380px){
+  .kpis,.hcs,.cards{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -161,6 +205,7 @@ svg text{font-size:11px;fill:#94a3b8}
 
 <!-- APP -->
 <div id="app" class="hidden">
+  <div class="ovl" id="ovl"></div>
   <aside class="side">
     <div class="brand"><b>IOT <span>SOLUTION</span></b></div>
     <div class="avatar" id="av">IS</div>
@@ -168,7 +213,7 @@ svg text{font-size:11px;fill:#94a3b8}
     <nav class="nav" id="nav"></nav>
   </aside>
   <div class="main">
-    <div class="top"><div class="search">🔍 SEARCH ...</div><button id="logout">Logout</button></div>
+    <div class="top"><div class="lt"><button id="menuBtn" aria-label="Menu">☰</button><div class="search">🔍 SEARCH ...</div></div><button id="logout">Logout</button></div>
     <div class="content" id="view"></div>
   </div>
 </div>
@@ -186,23 +231,33 @@ const myType=()=>sessionStorage.getItem("iot_type")||"Admin";
 const MENU=[
  {n:"Dashboard"},{n:"Device Models"},{n:"Devices"},{n:"Production Portal"},
  {n:"Device Configuration",sub:["Change Firmware","Command List","Send Command","Send Bulk Command"]},
- {n:"Firmware Manager"},
+ {n:"Firmware Manager",sub:["Firmware Change","Upload Firmware"]},
  {n:"Remote Terminal",sub:["Session List","New Session"]},
  {n:"Repair Portal"},{n:"Logs"},{n:"Users"}];
 const $=id=>document.getElementById(id);
 
 /* login */
-$("lform").onsubmit=e=>{e.preventDefault();
-  const u=$("uid").value.trim(),p=$("pwd").value;let t=null;
-  if(u==="Admin"&&p==="Admin123")t="Admin";
-  else{const f=store.get("iot_users").find(x=>x.uid===u&&x.pwd===p);if(f)t=f.type;}
+$("lform").onsubmit=async e=>{e.preventDefault();
+  const u=$("uid").value.trim(),p=$("pwd").value,btn=e.target.querySelector("button");let t=null;
+  $("err").textContent="";btn.disabled=true;
+  try{
+    if(u==="Admin"&&p==="Admin123")t="Admin";
+    else{
+      const us=await getUsers(),h=await hashPw(u,p);
+      const f=us.find(x=>x.uid===u&&(x.ph?x.ph===h:x.pwd===p));if(f)t=f.type;
+    }
+  }catch(er){btn.disabled=false;return $("err").textContent="Server not reachable. Check internet / CLOUD.url";}
+  btn.disabled=false;
   if(t){sessionStorage.setItem("iot_auth","1");sessionStorage.setItem("iot_user",u);sessionStorage.setItem("iot_type",t);start();}
   else $("err").textContent="Invalid Login ID or Password";};
+$("menuBtn").onclick=()=>document.body.classList.toggle("navopen");
+$("ovl").onclick=()=>document.body.classList.remove("navopen");
 $("logout").onclick=()=>{sessionStorage.removeItem("iot_auth");location.reload();};
 
 function start(){$("login").classList.add("hidden");$("app").classList.remove("hidden");
   $("uname").textContent=who()+" ("+myType()+")";$("av").textContent=who().slice(0,2).toUpperCase();route();}
 function route(){
+  document.body.classList.remove("navopen");
   loadModels();
   clearInterval(window._tt);clearInterval(window._td);if(window._ws){try{window._ws.close()}catch(e){}window._ws=null;}
   const p=decodeURIComponent(location.hash.slice(1))||"Dashboard";
@@ -211,7 +266,7 @@ function route(){
     let h=`<a class="${open?'active':''}" href="#${encodeURIComponent(m.sub?m.sub[0]:m.n)}">${m.n}${m.sub?' ▾':''}</a>`;
     if(m.sub&&open)h+=m.sub.map(s=>`<a class="sub ${s===p?'active':''}" href="#${encodeURIComponent(s)}">${s}</a>`).join("");
     return h;}).join("");
-  const PAGES={"Dashboard":dash,"Device Models":models,"Change Firmware":fwPage,"Command List":cmdList,"Send Command":sendCmd,
+  const PAGES={"Dashboard":dash,"Device Models":models,"Change Firmware":fwPage,"Firmware Change":fwMgr,"Firmware Manager":fwMgr,"Upload Firmware":fwUp,"Command List":cmdList,"Send Command":sendCmd,
     "Send Bulk Command":bulkCmd,"Session List":sessList,"New Session":newSess,"Devices":devPage,"Add Device":addDev,"Add Model":addModel,"Users":usersPage};
   $("view").innerHTML=p.startsWith("Terminal/")?termPage(p.slice(9)):PAGES[p]?PAGES[p]():`<h1>${p}</h1><div class="panel"><div class="soon">No data available</div></div>`;
 }
@@ -313,6 +368,123 @@ function doFw(){
   if(!v)return flash("Select version",0);
   const a=store.get("iot_fw");a.push({t,v,l,by:who(),at:ts()});store.set("iot_fw",a);
   flash("Firmware "+v+" queued for "+l.length+" "+t+" device(s)",1);
+}
+
+
+/* ---------- Firmware Manager ---------- */
+/* FW_CMD: device ko firmware link bhejne wali command. {url} ki jagah firmware ka link lagta hai.
+   Apne device ki asli upgrade command yahan (ya Upload Firmware page par) likhein.
+   FW_API.url: (optional) apni server API – blank rakhein to sirf Command List me command add hoti hai. */
+const FW_CMD="UPGRADE,{url}";
+const FW_API={url:""};
+const FW_MAX=20*1024*1024,FW_EXT=/\.(bin|hex|zip|fw|img|rbl|s19|srec|dfu|gz)$/i;
+const fwMeta=()=>store.get("iot_fwmeta");
+const isUrl=u=>{try{const x=new URL(u);return x.protocol==="http:"||x.protocol==="https:";}catch(e){return false;}};
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("iot_fw_files",1);r.onupgradeneeded=()=>r.result.createObjectStore("f");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+const idbPut=async(k,v)=>{const d=await idb();return new Promise((res,rej)=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});};
+const idbGet=async k=>{const d=await idb();return new Promise((res,rej)=>{const q=d.transaction("f").objectStore("f").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});};
+const idbDel=async k=>{const d=await idb();return new Promise((res,rej)=>{const t=d.transaction("f","readwrite");t.objectStore("f").delete(k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});};
+const fmtSize=n=>!n?"-":n>=1048576?(n/1048576).toFixed(2)+" MB":(n/1024).toFixed(1)+" KB";
+async function sha256(buf){try{const h=await crypto.subtle.digest("SHA-256",buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("");}catch(e){return "-";}}
+
+/* --- Upload Firmware --- */
+function fwUp(){setTimeout(drawFwFiles,0);return `<h1>Firmware Manager <small>» Upload Firmware</small></h1>
+<div class="panel"><h3>Add Firmware Version</h3><div class="body fm">
+<label>Device Model</label>${typeSel("fu_type")}
+<label>Firmware Version</label><input id="fu_ver" maxlength="20" placeholder="e.g. 2.0.6">
+<label>Firmware Link (URL) <span class="hint">(device isi link se firmware download karega)</span></label><input id="fu_url" type="url" inputmode="url" placeholder="https://yourserver.com/firmware/GT06_v2.0.6.bin">
+<label>Update Command <span class="hint">({url} ki jagah upar ka link lagega)</span></label><input id="fu_cmd" value="${esc(FW_CMD)}" placeholder="UPGRADE,{url}">
+<div class="sep"></div>
+<label>OR Firmware File <span class="hint">(optional – .bin, .hex, .zip, .fw, .img … max 20 MB)</span></label><input type="file" id="fu_file" accept=".bin,.hex,.zip,.fw,.img,.rbl,.s19,.srec,.dfu,.gz">
+<label>Release Notes <span class="hint">(optional)</span></label><textarea id="fu_note" rows="3" placeholder="What changed in this version"></textarea>
+<div class="note">Link <b>ya</b> File – kam se kam ek zaroori hai. Link dene par Firmware Change me update karte hi command <b>Command List</b> me add ho jati hai.</div>
+<div id="msg" class="msg"></div>${actions("doFwUp()","SAVE")}</div></div>
+<div class="panel" style="margin-top:18px"><h3>Firmware Versions</h3><div id="fwf"></div></div>`;}
+async function doFwUp(){
+  const t=val("fu_type"),v=val("fu_ver"),u=val("fu_url"),c=val("fu_cmd"),f=$("fu_file").files[0],n=val("fu_note");
+  if(!t)return flash("Select device model",0);
+  if(!/^[A-Za-z0-9._-]{1,20}$/.test(v))return flash("Enter a valid version (letters, digits, . _ -)",0);
+  if(!u&&!f)return flash("Enter firmware link or choose a firmware file",0);
+  if(u&&!isUrl(u))return flash("Enter a valid link starting with http:// or https://",0);
+  if(u&&!c.includes("{url}"))return flash("Update Command must contain {url}",0);
+  if(f){
+    if(!FW_EXT.test(f.name))return flash("Unsupported file type. Use .bin, .hex, .zip, .fw, .img etc.",0);
+    if(!f.size)return flash("File is empty",0);
+    if(f.size>FW_MAX)return flash("File too large ("+fmtSize(f.size)+"). Max 20 MB",0);
+  }
+  if(fwMeta().some(x=>x.model===t&&x.ver.toLowerCase()===v.toLowerCase()))return flash("Version "+v+" already added for "+t,0);
+  flash("Saving…",1);
+  try{
+    const id=Date.now();let hash="-";
+    if(f){const buf=await f.arrayBuffer();hash=await sha256(buf);await idbPut(id,{buf});}
+    const a=fwMeta();a.push({id,model:t,ver:v,url:u,cmd:u?c:"",name:f?f.name:"",size:f?f.size:0,sha:hash,note:n,by:who(),at:ts()});store.set("iot_fwmeta",a);
+    flash("Firmware "+v+" saved for "+t,1);
+    $("fu_ver").value="";$("fu_url").value="";$("fu_file").value="";$("fu_note").value="";drawFwFiles();
+  }catch(e){flash("Save failed: browser storage error",0);}
+}
+function drawFwFiles(){
+  const e=$("fwf");if(!e)return;const a=fwMeta().slice().reverse();
+  e.innerHTML=`<table><tr><th>SR. NO.</th><th>DEVICE MODEL</th><th>VERSION</th><th>LINK / FILE</th><th>SIZE</th><th>ADDED BY</th><th>ADDED AT</th><th>ACTION</th></tr>
+${a.length?a.map((x,i)=>`<tr><td>${i+1}</td><td><span class="tag">${esc(x.model)}</span></td><td><span class="tag g">${esc(x.ver)}</span></td><td style="word-break:break-all">${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.url)}</a><br><small>CMD: ${esc(x.cmd)}</small>`:""}${x.name?`${x.url?"<br>":""}📎 ${esc(x.name)}`:""}${x.note?`<br><small>${esc(x.note)}</small>`:""}</td><td>${fmtSize(x.size)}</td><td>${esc(x.by)}</td><td>${x.at}</td><td style="white-space:nowrap">${x.name?`<button class="del" style="background:#dbeafe" title="Download" onclick="dlFw(${x.id})">⬇</button> `:""}<button class="del" onclick="delFw(${x.id})">🗑</button></td></tr>`).join(""):`<tr><td colspan="8" class="soon">No firmware added yet</td></tr>`}</table>`;
+}
+async function dlFw(id){
+  const m=fwMeta().find(x=>x.id===id),r=await idbGet(id).catch(()=>null);
+  if(!m||!r)return alert("File not found in storage");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([r.buf]));a.download=m.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+async function delFw(id){
+  if(!confirm("Delete this firmware version?"))return;
+  await idbDel(id).catch(()=>0);store.set("iot_fwmeta",fwMeta().filter(x=>x.id!==id));drawFwFiles();
+}
+
+/* --- Firmware Change --- */
+function fwMgr(){setTimeout(drawFwHist,0);return `<h1>Firmware Manager <small>» Firmware Change</small></h1>
+<div class="panel"><h3>Firmware Change</h3><div class="body fm">
+<label>Device Model</label>${typeSel("fm_type").replace("<select ",'<select onchange="fmVers()" ')}
+<label>Enter IMEI</label><input id="fm_imei" maxlength="15" inputmode="numeric" placeholder="15 digit IMEI">
+<label>Select Version <span class="hint">(Upload Firmware me add kiye versions)</span></label><select id="fm_ver"><option value="">Select device model first</option></select>
+<div id="msg" class="msg"></div>${actions("doFwMgr()","UPDATE FIRMWARE")}
+<div class="note">Link wale version par UPDATE dabate hi firmware ki command <b>Command List</b> me add hoti hai (status “Not sent”) aur device ko wahi se bheji jati hai.${FW_API.url?"":" Sirf file wale version ko online bhejne ke liye server API (<code>FW_API.url</code>) chahiye."}</div></div></div>
+<div class="panel" style="margin-top:18px"><h3>Recent Firmware Changes</h3><div id="fwh"></div></div>`;}
+function fmVers(){
+  const t=val("fm_type"),e=$("fm_ver"),a=fwMeta().filter(x=>x.model===t);
+  e.innerHTML=!t?`<option value="">Select device model first</option>`:a.length?`<option value="">Select Version</option>`+a.map(x=>`<option value="${x.id}">${esc(x.ver)} — ${esc(x.url?x.url.replace(/^https?:\/\//,"").slice(0,40):x.name)}</option>`).join(""):`<option value="">No firmware added for ${esc(t)}</option>`;
+}
+async function doFwMgr(){
+  const t=val("fm_type"),i=val("fm_imei"),id=+val("fm_ver");
+  if(!t)return flash("Select device model",0);
+  if(!isImei(i))return flash("Enter valid 15 digit IMEI",0);
+  const er=chkDev(i,t);if(er)return flash(er,0);
+  const m=fwMeta().find(x=>x.id===id);
+  if(!m)return flash(fwMeta().some(x=>x.model===t)?"Select version":"No firmware added for "+t+". Add it first in Upload Firmware.",0);
+  let st="Queued",msg="",cmd="";
+  if(m.url){
+    cmd=(m.cmd||FW_CMD).replace(/\{url\}/g,m.url);
+    const c=store.get("iot_cmd");c.push(mkCmd(t,i,cmd));store.set("iot_cmd",c);
+    msg="Firmware "+m.ver+" command added to Command List: "+cmd;
+  }
+  if(FW_API.url){
+    flash("Sending to server…",1);
+    try{
+      const fd=new FormData();fd.append("imei",i);fd.append("model",t);fd.append("version",m.ver);
+      if(m.url){fd.append("url",m.url);fd.append("command",cmd);}
+      if(m.name){const r=await idbGet(id);if(r){fd.append("sha256",m.sha);fd.append("file",new Blob([r.buf]),m.name);}}
+      const res=await fetch(FW_API.url,{method:"POST",body:fd});
+      if(!res.ok)throw new Error("HTTP "+res.status);
+      st="Sent";msg="Firmware "+m.ver+" sent to server for "+t+" device "+i;
+    }catch(e){st="Failed";msg="Server request failed: "+e.message+(m.url?" (command is still in Command List)":"");}
+  }else if(!m.url){
+    msg="This version has only a file – server API (FW_API.url) is not set, so it was only queued. Add a firmware link to send it from here.";
+  }
+  const a=store.get("iot_fw");a.push({t,v:m.ver,l:[i],file:m.url||m.name||"-",st,by:who(),at:ts()});store.set("iot_fw",a);
+  flash(msg,st!=="Failed"&&(m.url||FW_API.url));$("fm_imei").value="";drawFwHist();
+}
+function drawFwHist(){
+  const e=$("fwh");if(!e)return;
+  const rows=[];store.get("iot_fw").forEach(f=>(f.l||[]).forEach(i=>rows.push({i,t:f.t,v:f.v,file:f.file||"-",st:f.st||"Queued",by:f.by,at:f.at})));
+  const r=rows.reverse().slice(0,10);
+  e.innerHTML=`<table><tr><th>SR. NO.</th><th>IMEI</th><th>DEVICE MODEL</th><th>VERSION</th><th>LINK / FILE</th><th>STATUS</th><th>REQUESTED BY</th><th>REQUESTED AT</th></tr>
+${r.length?r.map((x,n)=>`<tr><td>${n+1}</td><td>${esc(x.i)}</td><td><span class="tag">${esc(x.t)}</span></td><td><span class="tag g">${esc(x.v)}</span></td><td style="word-break:break-all">${esc(x.file)}</td><td><span class="tag ${x.st==="Sent"?"g":x.st==="Failed"?"r":"y"}">${esc(x.st)}</span></td><td>${esc(x.by)}</td><td>${x.at}</td></tr>`).join(""):`<tr><td colspan="8" class="soon">No firmware changes yet</td></tr>`}</table>`;
 }
 
 /* ---------- Command List ---------- */
@@ -482,30 +654,68 @@ function delDev(id){if(confirm("Delete this device?")){store.set("iot_dev",store
 
 
 /* ---------- Users ---------- */
+/* CLOUD.url: Firebase Realtime Database ka URL, e.g. "https://myproject-default-rtdb.firebaseio.com"
+   Set karne par users sab devices / browsers par kaam karte hain. Blank = users sirf isi browser me save hote hain. */
+const CLOUD={url:"https://iot-soluaction-default-rtdb.asia-southeast1.firebasedatabase.app"};
+const cloudBase=()=>CLOUD.url.replace(/\/+$/,"");
+const ukey=u=>[...u.toLowerCase()].map(ch=>/[a-z0-9_-]/.test(ch)?ch:"~"+ch.charCodeAt(0).toString(16)+"~").join("");
+async function hashPw(u,p){const t="iot:"+u.toLowerCase()+":"+p;try{return await sha256(new TextEncoder().encode(t));}catch(e){return "plain:"+t;}}
+async function getUsers(){
+  if(!CLOUD.url)return store.get("iot_users");
+  const r=await fetch(cloudBase()+"/iot_users.json");if(!r.ok)throw new Error("HTTP "+r.status);
+  const o=await r.json();return o?Object.values(o):[];
+}
+async function saveUser(u){
+  if(!CLOUD.url){const a=store.get("iot_users");a.push(u);store.set("iot_users",a);return;}
+  const r=await fetch(cloudBase()+"/iot_users/"+ukey(u.uid)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(u)});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+}
+async function removeUser(u){
+  if(!CLOUD.url){store.set("iot_users",store.get("iot_users").filter(x=>x.id!==u.id));return;}
+  const r=await fetch(cloudBase()+"/iot_users/"+ukey(u.uid)+".json",{method:"DELETE"});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+}
+let _uc=[];
+async function drawUserList(){
+  const e=$("ulist");if(!e)return;
+  e.innerHTML=`<div class="soon" style="padding:24px">Loading users…</div>`;
+  try{_uc=await getUsers();}catch(er){e.innerHTML=`<div class="soon" style="padding:24px;color:#991b1b">Could not load users from server (${esc(er.message)})</div>`;return;}
+  _uc.sort((x,y)=>x.id-y.id);
+  e.innerHTML=`<table><tr><th>SR. NO.</th><th>USER ID</th><th>USER TYPE</th><th>ADDED BY</th><th>ADDED AT</th><th>ACTION</th></tr>
+<tr><td>0</td><td>Admin</td><td><span class="tag p">Admin</span></td><td>System</td><td>-</td><td></td></tr>
+${_uc.map((u,i)=>`<tr><td>${i+1}</td><td>${esc(u.uid)}</td><td><span class="tag ${u.type==="Admin"?"p":u.type==="Sub Admin"?"y":""}">${esc(u.type)}</span></td><td>${esc(u.by)}</td><td>${u.at}</td><td><button class="del" onclick="delUser(${u.id})">🗑</button></td></tr>`).join("")}</table>`;
+}
 function usersPage(){
   if(myType()!=="Admin")return `<h1>Users</h1><div class="panel"><div class="soon">Only Admin can manage users</div></div>`;
-  const a=store.get("iot_users");
+  setTimeout(drawUserList,0);
   return `<h1>Users <small>» Manage</small></h1>
 <div class="panel"><h3>Add New User</h3><div class="body fm">
 <label>User ID</label><input id="u_id" placeholder="Enter User ID" maxlength="30" autocomplete="off">
 <label>Password</label><input id="u_pw" type="password" placeholder="Min 6 characters" autocomplete="new-password">
 <label>User Type</label><select id="u_type"><option value="">Select User Type</option>${USER_TYPES.map(t=>`<option>${t}</option>`).join("")}</select>
 <div id="msg" class="msg"></div>
-<div class="btns"><button class="b1" onclick="doUser()">✔ ADD USER</button><button class="b2" onclick="route()">↺ RESET</button></div></div></div>
-<div class="panel" style="margin-top:18px"><h3>User List</h3><table><tr><th>SR. NO.</th><th>USER ID</th><th>USER TYPE</th><th>ADDED BY</th><th>ADDED AT</th><th>ACTION</th></tr>
-<tr><td>0</td><td>Admin</td><td><span class="tag p">Admin</span></td><td>System</td><td>-</td><td></td></tr>
-${a.map((u,i)=>`<tr><td>${i+1}</td><td>${esc(u.uid)}</td><td><span class="tag ${u.type==="Admin"?"p":u.type==="Sub Admin"?"y":""}">${esc(u.type)}</span></td><td>${esc(u.by)}</td><td>${u.at}</td><td><button class="del" onclick="delUser(${u.id})">🗑</button></td></tr>`).join("")}
-</table></div>`;
+<div class="btns"><button class="b1" onclick="doUser()">✔ ADD USER</button><button class="b2" onclick="route()">↺ RESET</button></div>
+${CLOUD.url?"":`<div class="note">⚠ Users abhi sirf <b>isi browser</b> me save ho rahe hain, isliye doosre phone/computer par login nahi hoga. Sab jagah chalane ke liye <code>CLOUD.url</code> set karein.</div>`}</div></div>
+<div class="panel" style="margin-top:18px"><h3>User List</h3><div id="ulist"></div></div>`;
 }
-function doUser(){
-  const u=val("u_id"),p=$("u_pw").value,t=$("u_type").value,a=store.get("iot_users");
+async function doUser(){
+  const u=val("u_id"),p=$("u_pw").value,t=$("u_type").value;
   if(u.length<3)return flash("User ID must be at least 3 characters",0);
-  if(u.toLowerCase()==="admin"||a.some(x=>x.uid.toLowerCase()===u.toLowerCase()))return flash("This User ID already exists",0);
   if(p.length<6)return flash("Password must be at least 6 characters",0);
   if(!t)return flash("Select user type",0);
-  a.push({id:Date.now(),uid:u,pwd:p,type:t,by:who(),at:ts()});store.set("iot_users",a);route();
+  flash("Saving…",1);
+  try{
+    const a=await getUsers();
+    if(u.toLowerCase()==="admin"||a.some(x=>x.uid.toLowerCase()===u.toLowerCase()))return flash("This User ID already exists",0);
+    await saveUser({id:Date.now(),uid:u,ph:await hashPw(u,p),type:t,by:who(),at:ts()});
+  }catch(er){return flash("Could not save user: "+er.message+(CLOUD.url?" (check CLOUD.url and database rules)":""),0);}
+  route();
 }
-function delUser(id){if(confirm("Delete this user?")){store.set("iot_users",store.get("iot_users").filter(u=>u.id!==id));route();}}
+async function delUser(id){
+  const u=_uc.find(x=>x.id===id);if(!u||!confirm("Delete this user?"))return;
+  try{await removeUser(u);}catch(er){return alert("Could not delete: "+er.message);}
+  drawUserList();
+}
 
 /* ---------- Remote Terminal console ---------- */
 const RT={ip:"154.210.168.75",port:8900,ws:""}; // ws: backend WebSocket URL (e.g. "ws://yourserver:8901") – blank = demo only
