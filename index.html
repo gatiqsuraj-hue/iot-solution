@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IOT Solution</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Segoe UI",Roboto,Arial,sans-serif;background:#f0f3f8;color:#2b3445}
@@ -185,6 +186,23 @@ svg text{font-size:11px;fill:#94a3b8}
 .fm .pgrid input[type=checkbox]{width:18px;height:18px;padding:0;margin:0;flex-shrink:0}
 .pgtools{display:flex;gap:8px;margin:8px 0 4px}
 .cnt{display:inline-block;min-width:22px;text-align:center}
+.vlogo{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,#e0f2fe,#ede9fe);border:2px solid #bfdbfe;flex-shrink:0;line-height:1}
+.map{height:520px;border-radius:10px;border:1px solid #e2e8f0;position:relative;z-index:0}
+.lvwrap{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.lvwrap{grid-template-columns:1fr}.map{height:380px}}
+.lvi{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid #eef1f6;cursor:pointer}
+.lvi:hover,.lvi.sel{background:#eff6ff}
+.lvi .t1{font-weight:600;font-size:14px}.lvi .t2{font-size:12px;color:#64748b}
+.mk{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#fff;border:3px solid #10b981;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.mk.off{border-color:#ef4444}
+.ig{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.ig .c{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #6366f1}
+.ig .k{font-size:12px;color:#64748b}.ig .v{font-size:17px;font-weight:600;color:#0f172a;margin-top:2px;word-break:break-word}
+.demo{display:inline-block;background:#fef9c3;color:#854d0e;border-radius:12px;padding:3px 10px;font-size:12px;margin-left:8px}
+.hp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;background:#fff;padding:12px 16px;border-radius:10px}
+.hp input[type=range]{flex:1;min-width:160px}
+.vpv{display:flex;align-items:center;gap:10px;margin-top:10px}
+
 </style>
 </head>
 <body>
@@ -226,6 +244,7 @@ svg text{font-size:11px;fill:#94a3b8}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const BASE_MODELS=["PNVE","MIJO","GT06","FMB920","V5","AIS140","RFID","E-LOCK","VIDEO CAMERA"];
 let MODELS=BASE_MODELS.slice();
@@ -235,13 +254,14 @@ function loadModels(){MODELS=BASE_MODELS.concat(store.get("iot_models").map(x=>x
 const USER_TYPES=["Admin","Sub Admin","User"];
 const myType=()=>sessionStorage.getItem("iot_type")||"Admin";
 const MENU=[
- {n:"Dashboard"},{n:"Device Models"},{n:"Devices"},{n:"Production Portal"},
+ {n:"Dashboard"},{n:"Vehicle Tracking",sub:["Add Vehicle","Live Tracking","History Tracking","History Report","Vehicle On/Off Report","Vehicle Summary Report"]},{n:"Device Models"},{n:"Devices"},{n:"Production Portal"},
  {n:"Device Configuration",sub:["Change Firmware","Command List","Send Command","Send Bulk Command"]},
  {n:"Firmware Manager",sub:["Firmware Change","Upload Firmware"]},
  {n:"Remote Terminal",sub:["Session List","New Session"]},
  {n:"Repair Portal"},{n:"Logs"},{n:"Settings",sub:["Contacts/Sub-Account"]}];
 const PERMS=[
  {g:"DASHBOARD",i:[["dash","View Dashboard"]]},
+ {g:"VEHICLE TRACKING",i:[["veh_a","Add / View Vehicles"],["veh_live","Live Tracking"],["veh_hist","History Tracking"],["veh_rep","Vehicle Reports"]]},
  {g:"DEVICE MODELS",i:[["models_v","View Device Models"],["models_a","Add Device Models"]]},
  {g:"DEVICES",i:[["dev_v","View Devices"],["dev_a","Add Devices"]]},
  {g:"PRODUCTION PORTAL",i:[["prod","View Production Portal"]]},
@@ -253,7 +273,7 @@ const PERMS=[
 const ALLP=PERMS.flatMap(x=>x.i.map(y=>y[0]));
 const PAGEPERM={"Dashboard":"dash","Device Models":"models_v","Add Model":"models_a","Devices":"dev_v","Add Device":"dev_a","Production Portal":"prod",
  "Change Firmware":"fw_chg","Firmware Change":"fw_chg","Firmware Manager":"fw_chg","Upload Firmware":"fw_up","Command List":"cmd_v","Send Command":"cmd_s","Send Bulk Command":"cmd_b",
- "Session List":"term","New Session":"term","Repair Portal":"repair","Logs":"logs"};
+ "Session List":"term","New Session":"term","Repair Portal":"repair","Logs":"logs","Add Vehicle":"veh_a","Live Tracking":"veh_live","History Tracking":"veh_hist","History Report":"veh_rep","Vehicle On/Off Report":"veh_rep","Vehicle Summary Report":"veh_rep"};
 const ADMINPAGES=["Contacts/Sub-Account","Add Contact","Users","Settings"];
 const can=k=>{if(myType()==="Admin")return true;const p=sessionStorage.getItem("iot_perms");if(!p||p==="null")return true;try{return JSON.parse(p).includes(k);}catch(e){return false;}};
 const pageAllowed=p=>{if(ADMINPAGES.includes(p))return isMain();const k=PAGEPERM[p]||(p.startsWith("Terminal/")?"term":null);return k?can(k):true;};
@@ -288,6 +308,7 @@ function route(){
   document.body.classList.remove("navopen");
   loadModels();
   clearInterval(window._tt);clearInterval(window._td);if(window._ws){try{window._ws.close()}catch(e){}window._ws=null;}
+  if(window._map){try{window._map.remove()}catch(e){}window._map=null;}window._hpOn=false;
   const vis=MENU.map(m=>m.sub?Object.assign({},m,{sub:m.sub.filter(pageAllowed)}):m).filter(m=>m.sub?m.sub.length:pageAllowed(m.n));
   let p=decodeURIComponent(location.hash.slice(1));
   if(!p)p=pageAllowed("Dashboard")?"Dashboard":(vis.length?(vis[0].sub?vis[0].sub[0]:vis[0].n):"No Access");
@@ -297,7 +318,8 @@ function route(){
     if(m.sub&&open)h+=m.sub.map(s=>`<a class="sub ${s===p?'active':''}" href="#${encodeURIComponent(s)}">${s}</a>`).join("");
     return h;}).join("");
   const PAGES={"Dashboard":dash,"Device Models":models,"Change Firmware":fwPage,"Firmware Change":fwMgr,"Firmware Manager":fwMgr,"Upload Firmware":fwUp,"Command List":cmdList,"Send Command":sendCmd,
-    "Send Bulk Command":bulkCmd,"Session List":sessList,"New Session":newSess,"Devices":devPage,"Add Device":addDev,"Add Model":addModel,"Users":contactsPage,"Contacts/Sub-Account":contactsPage,"Add Contact":addContact};
+    "Send Bulk Command":bulkCmd,"Session List":sessList,"New Session":newSess,"Devices":devPage,"Add Device":addDev,"Add Model":addModel,"Users":contactsPage,"Contacts/Sub-Account":contactsPage,"Add Contact":addContact,
+    "Add Vehicle":addVeh,"Live Tracking":liveTrk,"History Tracking":histTrk,"History Report":repHist,"Vehicle On/Off Report":repOnOff,"Vehicle Summary Report":repSum};
   $("view").innerHTML=(p==="No Access"||!pageAllowed(p))?noAccess():p.startsWith("Terminal/")?termPage(p.slice(9)):PAGES[p]?PAGES[p]():`<h1>${p}</h1><div class="panel"><div class="soon">No data available</div></div>`;
 }
 window.onhashchange=()=>{if(sessionStorage.getItem("iot_auth"))route();};
@@ -810,6 +832,263 @@ function termStop(id){store.set("iot_sess",store.get("iot_sess").map(s=>s.id===i
 function termFs(){const e=$("term");if(e&&e.requestFullscreen)e.requestFullscreen();}
 function copyCmd(){try{navigator.clipboard.writeText("rdbg="+RT.ip+","+RT.port)}catch(e){}}
 
+
+/* ---------- Vehicle Tracking ---------- */
+/* Live / History data source: Firebase (CLOUD.url) me  iot_live/<IMEI>  aur  iot_hist/<IMEI>  se padhta hai.
+   iot_live/<IMEI> = {t:ms, lat, lng, speed, ign:true/false, power:V, batt:V, gsm:0-5, sats:n}
+   iot_hist/<IMEI>/<pushid> = {t:ms, lat, lng, speed, ign, power}
+   Data na milne par DEMO data dikhta hai (badge ke saath). Map: OpenStreetMap (free). */
+const DEMO_NOTE="DEMO DATA – device ka live data server abhi connect nahi hai";
+const VTYPES=[["2 Wheeler","🏍️"],["Scooter","🛵"],["Bicycle","🚲"],["3 Wheeler / Auto","🛺"],["E-Rickshaw","🛺"],["Car","🚗"],["Taxi / Cab","🚕"],["Jeep / SUV","🚙"],["Van / Tempo","🚐"],["Pickup / Mini Truck","🛻"],["Truck","🚚"],["Trailer / Container","🚛"],["Tanker","🚛"],["Dumper / Tipper","🚚"],["Bus","🚌"],["School Bus","🚌"],["Ambulance","🚑"],["Fire Truck","🚒"],["Police Vehicle","🚓"],["Tractor","🚜"],["JCB / Excavator","🏗️"],["Crane","🏗️"],["Garbage Truck","🚛"],["Other","📍"]];
+const vIcon=t=>(VTYPES.find(x=>x[0]===t)||[0,"📍"])[1];
+const vehs=()=>store.get("iot_veh");
+const vLogo=(t,s)=>{s=s||40;return `<span class="vlogo" style="width:${s}px;height:${s}px;font-size:${Math.round(s*.55)}px">${vIcon(t)}</span>`;};
+const vehSel=(id,all)=>`<select id="${id}" style="max-width:420px">${all?'<option value="all">All Vehicles</option>':'<option value="">Select Vehicle</option>'}${vehs().map(v=>`<option value="${v.id}">${esc(v.name)} — ${esc(v.imei)}</option>`).join("")}</select>`;
+const dtl=d=>{d=new Date(d);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());};
+const fd=ms=>{const m=Math.round(ms/60000);return Math.floor(m/60)+"h "+(m%60)+"m";};
+const nz=(x,u)=>x==null||x===""?"-":x+(u||"");
+const hav=(a,b)=>{const r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng),h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 12742*Math.asin(Math.sqrt(h));};
+function calc(a){
+  let d=0,mx=0,run=0,stop=0,on=0,ms=0,mc=0,first="-",last="-";
+  for(let i=0;i<a.length;i++){const p=a[i];
+    if(p.speed>mx)mx=p.speed;if(p.speed>0){ms+=p.speed;mc++;}
+    if(i){const q=a[i-1],dt=Math.min(p.t-q.t,18e5);
+      if(q.speed>0||p.speed>0)d+=hav(q,p);
+      if(q.ign)run+=dt;else stop+=dt;
+      if(!q.ign&&p.ign){on++;if(first==="-")first=ts(new Date(p.t));}
+      if(q.ign&&!p.ign)last=ts(new Date(p.t));
+    }else if(p.ign){on++;first=ts(new Date(p.t));}
+  }
+  return{d,mx,avg:mc?ms/mc:0,run,stop,on,first,last};
+}
+/* demo data generator (sirf tab jab server me data na ho) */
+function simState(imei,t){
+  let s=0;for(const ch of imei)s=(s*31+ch.charCodeAt(0))%100003;
+  const bl=28.6139+(s%50)/500,bg=77.2090+(s%37)/500,k=t/600000+s;
+  const ign=Math.sin(t/2400000+s)>-0.35;
+  const sp=ign?Math.round(Math.max(3,25+30*Math.sin(t/180000+s)+8*Math.sin(t/37000))):0;
+  return{t,lat:+(bl+0.03*Math.sin(k*0.9)+0.01*Math.sin(k*3.1)).toFixed(6),lng:+(bg+0.03*Math.cos(k*0.7)+0.01*Math.cos(k*2.3)).toFixed(6),
+    speed:sp,ign,power:+(12.2+0.6*Math.sin(t/900000+s)).toFixed(1),batt:+(3.9+0.15*Math.sin(t/1800000)).toFixed(2),
+    gsm:2+Math.floor(3*Math.abs(Math.sin(t/500000+s))),sats:6+Math.floor(6*Math.abs(Math.sin(t/700000+s)))};
+}
+async function getLive(v){
+  if(CLOUD.url){try{const r=await fetch(cloudBase()+"/iot_live/"+v.imei+".json");if(r.ok){const o=await r.json();if(o&&o.lat!=null)return{d:o,demo:false};}}catch(e){}}
+  return{d:simState(v.imei,Date.now()),demo:true};
+}
+async function getPts(v,from,to){
+  if(CLOUD.url){try{const r=await fetch(cloudBase()+"/iot_hist/"+v.imei+".json");if(r.ok){const o=await r.json();
+    if(o){const a=Object.values(o).filter(x=>x&&x.t>=from&&x.t<=to).sort((x,y)=>x.t-y.t);if(a.length)return{a,demo:false};}}}catch(e){}}
+  const end=Math.min(to,Date.now()),a=[];
+  const step=Math.max(120000,Math.ceil((end-from)/4000/60000)*60000);
+  for(let t=Math.ceil(from/step)*step;t<=end;t+=step)a.push(simState(v.imei,t));
+  return{a,demo:true};
+}
+
+/* ---------- Add Vehicle ---------- */
+function vPrev(){$("v_pv").innerHTML=vLogo($("v_vt").value,54)+"<span>"+esc($("v_vt").value)+"</span>";}
+function addVeh(){
+  const a=vehs();
+  return `<h1>Vehicle Tracking <small>» Add Vehicle</small></h1>
+<div class="panel"><h3>Add New Vehicle</h3><div class="body fm">
+<label>Device Type</label>${typeSel("v_dt")}
+<label>Vehicle Type</label><select id="v_vt" onchange="vPrev()">${VTYPES.map(x=>`<option>${x[0]}</option>`).join("")}</select>
+<div class="vpv" id="v_pv">${vLogo(VTYPES[0][0],54)}<span>${VTYPES[0][0]}</span></div>
+<label>Vehicle Name / Number Plate</label><input id="v_name" maxlength="30" placeholder="e.g. BR01AB1234">
+<label>Add Vehicle Using</label><select id="v_by"><option value="imei">IMEI Number</option><option value="sim">SIM Number (ICCID)</option></select>
+<label>IMEI / SIM Number</label><input id="v_id" inputmode="numeric" maxlength="22" placeholder="15 digit IMEI ya SIM number">
+<div class="note">Device pehle <b>Devices</b> me add hona chahiye. IMEI ya Devices me save kiya SIM (ICCID) number dono se vehicle add ho sakta hai.</div>
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doVeh()">✔ SAVE</button><button class="b2" onclick="route()">↺ RESET</button><button class="b3" onclick="go('Dashboard')">✖ CANCEL</button></div></div></div>
+<div class="panel" style="margin-top:18px"><h3>Vehicles (${a.length})</h3><table><tr><th>SR. NO.</th><th>LOGO</th><th>VEHICLE</th><th>VEHICLE TYPE</th><th>DEVICE TYPE</th><th>IMEI</th><th>SIM</th><th>ADDED BY</th><th>ADDED AT</th><th>ACTION</th></tr>
+${a.length?a.map((v,i)=>`<tr><td>${i+1}</td><td>${vLogo(v.vtype,40)}</td><td>${esc(v.name)}</td><td>${esc(v.vtype)}</td><td><span class="tag">${esc(v.dtype)}</span></td><td>${esc(v.imei)}</td><td>${esc(v.sim||"-")}</td><td>${esc(v.by)}</td><td>${v.at}</td><td>${canDel()?`<button class="del" onclick="delVeh(${v.id})">🗑</button>`:""}</td></tr>`).join(""):`<tr><td colspan="10" class="soon">No vehicles added yet</td></tr>`}</table></div>`;
+}
+function doVeh(){
+  const dt=val("v_dt"),vt=$("v_vt").value,nm=val("v_name").toUpperCase(),by=$("v_by").value,k=val("v_id"),devs=store.get("iot_dev");
+  if(!dt)return flash("Select device type",0);
+  if(!nm)return flash("Enter vehicle name / number plate",0);
+  let d;
+  if(by==="imei"){if(!isImei(k))return flash("Enter valid 15 digit IMEI",0);d=devs.find(x=>x.imei===k);if(!d)return flash(chkDev(k,dt),0);}
+  else{if(k.length<8)return flash("Enter valid SIM number",0);d=devs.find(x=>x.iccid&&x.iccid!=="-"&&x.iccid===k);
+    if(!d)return flash("SIM “"+k+"” was not found in inventory. Please add the device (with ICCID) in Devices first.",0);}
+  if(d.type!==dt)return flash("This device is registered as model "+d.type+", not "+dt,0);
+  const a=vehs();
+  if(a.some(x=>x.imei===d.imei))return flash("A vehicle is already added with this device",0);
+  if(a.some(x=>x.name===nm))return flash("This vehicle name / number already exists",0);
+  a.push({id:Date.now(),name:nm,vtype:vt,dtype:dt,imei:d.imei,sim:d.iccid&&d.iccid!=="-"?d.iccid:"",by:who(),at:ts()});store.set("iot_veh",a);
+  route();flash("Vehicle "+nm+" added successfully",1);
+}
+function delVeh(id){if(!canDel())return;if(confirm("Delete this vehicle?")){store.set("iot_veh",vehs().filter(v=>v.id!==id));route();}}
+
+/* ---------- map helpers (OpenStreetMap + Leaflet, free) ---------- */
+function mkIcon(t,ign){return L.divIcon({html:`<div class="mk ${ign?"":"off"}">${vIcon(t)}</div>`,className:"",iconSize:[38,38],iconAnchor:[19,19]});}
+function newMap(){
+  if(!window.L||!$("map")){if($("map"))$("map").innerHTML='<div class="soon">Map load nahi hua (internet check karein)</div>';return null;}
+  if(window._map){try{window._map.remove()}catch(e){}}
+  const m=L.map("map").setView([22.5,79],5);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(m);
+  window._map=m;return m;
+}
+
+/* ---------- Live Tracking ---------- */
+let _lm={},_ld={},_sel=null,_ad={};
+function liveTrk(){setTimeout(liveInit,0);
+  return `<h1>Vehicle Tracking <small>» Live Tracking</small></h1>
+<div class="lvwrap"><div class="panel"><div class="body"><input class="srch" placeholder="Search vehicle / IMEI..." oninput="lvFilter(this.value)"></div><div id="lvlist"></div></div>
+<div><div id="lvbadge" style="margin-bottom:8px;min-height:22px"></div><div id="map" class="map"></div><div id="lvinfo"></div></div></div>`;}
+function lvFilter(q){window._lq=q;lvDrawList(q);}
+function lvDrawList(q){
+  const e=$("lvlist");if(!e)return;q=(q||"").toLowerCase();
+  const a=vehs().filter(v=>(v.name+" "+v.imei+" "+v.vtype).toLowerCase().includes(q));
+  e.innerHTML=a.length?a.map(v=>{const d=_ld[v.id];
+    return `<div class="lvi ${_sel===v.id?"sel":""}" onclick="lvPick(${v.id})">${vLogo(v.vtype,40)}<div><div class="t1">${esc(v.name)}</div><div class="t2">${esc(v.vtype)} · ${esc(v.imei)}</div></div><span style="margin-left:auto" class="tag ${d?(d.ign?"g":"r"):"y"}">${d?(d.ign?"ON":"OFF"):"…"}</span></div>`;}).join(""):`<div class="soon" style="padding:30px">${vehs().length?"No match":"No vehicles. Pehle Add Vehicle me vehicle add karein"}</div>`;
+}
+function liveInit(){
+  if(!$("map"))return;_lm={};_ld={};_sel=null;window._lq="";
+  if(!newMap()){lvDrawList("");return;}
+  lvDrawList("");lvInfo();
+  if(!vehs().length)return;
+  lvRefresh(true);window._tt=setInterval(()=>lvRefresh(false),10000);
+}
+async function lvRefresh(fit){
+  const a=vehs(),m=window._map;if(!m||!$("lvlist"))return;
+  const res=await Promise.all(a.map(v=>getLive(v)));
+  if(window._map!==m||!$("lvlist"))return;
+  let dm=false;
+  a.forEach((v,i)=>{const d=res[i].d,ll=[+d.lat,+d.lng];if(res[i].demo)dm=true;_ld[v.id]=d;
+    if(_lm[v.id])_lm[v.id].setLatLng(ll).setIcon(mkIcon(v.vtype,d.ign));
+    else{_lm[v.id]=L.marker(ll,{icon:mkIcon(v.vtype,d.ign),title:v.name}).addTo(m).on("click",()=>lvPick(v.id));_lm[v.id].bindTooltip(esc(v.name),{direction:"top",offset:[0,-18]});}});
+  if(fit&&a.length)m.fitBounds(L.featureGroup(Object.values(_lm)).getBounds().pad(.3),{maxZoom:15});
+  $("lvbadge").innerHTML=dm?`<span class="demo" style="margin:0">${DEMO_NOTE}</span>`:`<span class="tag g">● LIVE</span>`;
+  lvDrawList(window._lq||"");lvInfo();
+}
+function lvPick(id){
+  _sel=id;const mk=_lm[id];if(mk&&window._map)window._map.setView(mk.getLatLng(),Math.max(window._map.getZoom(),16));
+  lvDrawList(window._lq||"");lvInfo();lvAddr(id);
+}
+async function lvAddr(id){
+  const d=_ld[id];if(!d)return;
+  try{const r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+d.lat+"&lon="+d.lng);const o=await r.json();_ad[id]=o.display_name||"-";}
+  catch(e){_ad[id]="Address not available";}
+  const e=$("lvaddr");if(e&&_sel===id)e.textContent=_ad[id];
+}
+function lvInfo(){
+  const e=$("lvinfo");if(!e)return;
+  const v=vehs().find(x=>x.id===_sel),d=v&&_ld[v.id];
+  if(!v||!d){e.innerHTML=`<div class="note" style="max-width:none">Vehicle par click karein (list ya map se) – device ka pura data yahan dikhega.</div>`;return;}
+  const c=(k,val,col)=>`<div class="c" ${col?`style="border-color:${col}"`:""}><div class="k">${k}</div><div class="v">${val}</div></div>`;
+  e.innerHTML=`<div class="panel" style="margin-top:14px"><h3 style="display:flex;align-items:center;gap:12px">${vLogo(v.vtype,40)}<span>${esc(v.name)} <small style="color:#64748b;font-weight:400">${esc(v.vtype)} · ${esc(v.dtype)} · ${esc(v.imei)}</small></span></h3><div class="body">
+<div class="ig">${c("Ignition (IGN)",d.ign?"ON":"OFF",d.ign?"#10b981":"#ef4444")}${c("Power (External)",nz(d.power," V"),"#f59e0b")}${c("Backup Battery",nz(d.batt," V"))}${c("Speed",nz(d.speed," km/h"))}${c("GSM Signal",nz(d.gsm," / 5"))}${c("Satellites",nz(d.sats))}${c("Last Update",ts(new Date(d.t||Date.now())))}</div>
+<div class="ig">${c("Latitude",d.lat,"#06b6d4")}${c("Longitude",d.lng,"#06b6d4")}${c("Address",`<span id="lvaddr" style="font-size:13px;font-weight:400">${esc(_ad[v.id]||"Loading…")}</span>`)}</div></div></div>`;
+}
+
+/* ---------- History Tracking ---------- */
+let _hp=[],_hm=null,_hi=0;
+function histTrk(){
+  window._hpOn=false;_hp=[];const now=new Date(),st=new Date(now);st.setHours(0,0,0,0);
+  return `<h1>Vehicle Tracking <small>» History Tracking</small></h1>
+<div class="panel"><h3>Select Vehicle &amp; Time</h3><div class="body fm">
+<label>Vehicle</label>${vehSel("h_v")}
+<label>From</label><input type="datetime-local" id="h_f" value="${dtl(st)}" style="max-width:260px">
+<label>To</label><input type="datetime-local" id="h_t" value="${dtl(now)}" style="max-width:260px">
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doHist()">✔ SHOW HISTORY</button></div></div></div>
+<div id="hres" style="margin-top:18px"></div>`;
+}
+function hpSet(i){
+  _hi=i;const p=_hp[i];if(!p||!_hm)return;
+  _hm.setLatLng([p.lat,p.lng]);$("hpl").textContent=ts(new Date(p.t))+"  |  "+nz(p.speed," km/h")+"  |  IGN "+(p.ign?"ON":"OFF");$("hps").value=i;
+}
+function hpPlay(){
+  clearInterval(window._td);
+  if(window._hpOn){window._hpOn=false;$("hpb").textContent="▶ Play";return;}
+  if(_hi>=_hp.length-1)hpSet(0);
+  window._hpOn=true;$("hpb").textContent="⏸ Pause";const sp=+$("hpx").value;
+  window._td=setInterval(()=>{
+    if(_hi>=_hp.length-1){clearInterval(window._td);window._hpOn=false;if($("hpb"))$("hpb").textContent="▶ Play";return;}
+    hpSet(Math.min(_hp.length-1,_hi+sp));},150);
+}
+async function doHist(){
+  const v=vehs().find(x=>String(x.id)===val("h_v")),f=new Date($("h_f").value).getTime(),t=new Date($("h_t").value).getTime();
+  if(!v)return flash("Select vehicle",0);
+  if(!(f<t))return flash("Invalid date range (From must be before To)",0);
+  if(t-f>31*864e5)return flash("Maximum 31 days at a time",0);
+  flash("Loading…",1);
+  const r=await getPts(v,f,t);if(!$("hres"))return;
+  if(!r.a.length){$("hres").innerHTML="";return flash("No data found for this period",0);}
+  $("msg").className="msg";$("msg").textContent="";
+  window._hpOn=false;clearInterval(window._td);_hp=r.a;_hi=0;const s=calc(r.a);
+  const c=(k,val,col)=>`<div class="c" style="border-color:${col}"><div class="k">${k}</div><div class="v">${val}</div></div>`;
+  $("hres").innerHTML=`${r.demo?`<span class="demo" style="margin:0 0 10px">${DEMO_NOTE}</span>`:""}
+<div class="ig">${c("Points",r.a.length,"#6366f1")}${c("Distance",s.d.toFixed(1)+" km","#06b6d4")}${c("Max Speed",s.mx+" km/h","#ef4444")}${c("Avg Speed",s.avg.toFixed(0)+" km/h","#f59e0b")}${c("Running (IGN ON)",fd(s.run),"#10b981")}${c("Stopped (IGN OFF)",fd(s.stop),"#64748b")}</div>
+<div id="map" class="map" style="margin-top:12px"></div>
+<div class="hp"><button id="hpb" class="b1" style="padding:8px 16px;border-radius:4px;cursor:pointer" onclick="hpPlay()">▶ Play</button>
+<input id="hps" type="range" min="0" max="${r.a.length-1}" value="0" oninput="hpSet(+this.value)">
+<select id="hpx" class="pgsel" onchange="if(window._hpOn){window._hpOn=false;hpPlay();}"><option value="1">1x</option><option value="3" selected>3x</option><option value="10">10x</option><option value="30">30x</option></select>
+<span id="hpl" style="font-size:13px"></span></div>`;
+  const m=newMap();if(!m)return;
+  const ll=r.a.map(p=>[p.lat,p.lng]),poly=L.polyline(ll,{color:"#2563eb",weight:4,opacity:.85}).addTo(m);
+  m.fitBounds(poly.getBounds().pad(.15));
+  L.circleMarker(ll[0],{radius:8,color:"#fff",weight:2,fillColor:"#16a34a",fillOpacity:1}).addTo(m).bindTooltip("Start · "+ts(new Date(r.a[0].t)));
+  L.circleMarker(ll[ll.length-1],{radius:8,color:"#fff",weight:2,fillColor:"#dc2626",fillOpacity:1}).addTo(m).bindTooltip("End · "+ts(new Date(r.a[r.a.length-1].t)));
+  let n=0;for(let i=1;i<r.a.length&&n<200;i++){if(r.a[i-1].ign&&!r.a[i].ign){n++;L.circleMarker(ll[i],{radius:5,color:"#fff",weight:1,fillColor:"#f97316",fillOpacity:1}).addTo(m).bindTooltip("Ignition OFF · "+ts(new Date(r.a[i].t)));}}
+  _hm=L.marker(ll[0],{icon:mkIcon(v.vtype,true),zIndexOffset:1000}).addTo(m);hpSet(0);
+}
+
+/* ---------- Reports ---------- */
+let _rep={h:[],r:[],n:"report"};
+function repPage(kind){
+  const T={hist:["History Report",0],onoff:["Vehicle On/Off Report",0],sum:["Vehicle Summary Report",1]}[kind];
+  const now=new Date(),st=new Date(now);st.setHours(0,0,0,0);if(kind==="sum")st.setDate(st.getDate()-6);
+  _rep={h:[],r:[],n:kind+"_report"};
+  return `<h1>Vehicle Tracking <small>» ${T[0]}</small></h1>
+<div class="panel"><h3>${T[0]}</h3><div class="body fm">
+<label>Vehicle</label>${vehSel("r_v",T[1])}
+<label>From</label><input type="datetime-local" id="r_f" value="${dtl(st)}" style="max-width:260px">
+<label>To</label><input type="datetime-local" id="r_t" value="${dtl(now)}" style="max-width:260px">
+<div id="msg" class="msg"></div>
+<div class="btns"><button class="b1" onclick="doRep('${kind}')">✔ SHOW REPORT</button><button class="b3" onclick="repExport()">⬇ EXPORT EXCEL</button></div></div></div>
+<div class="panel" style="margin-top:18px"><h3 id="rtit">Result</h3><div id="rres"><div class="soon">Vehicle aur time select karke SHOW REPORT dabayein</div></div></div>`;
+}
+const repHist=()=>repPage("hist"),repOnOff=()=>repPage("onoff"),repSum=()=>repPage("sum");
+async function doRep(kind){
+  const sel=val("r_v"),f=new Date($("r_f").value).getTime(),t=new Date($("r_t").value).getTime();
+  if(!sel)return flash("Select vehicle",0);
+  if(!(f<t))return flash("Invalid date range (From must be before To)",0);
+  if(t-f>31*864e5)return flash("Maximum 31 days at a time",0);
+  const vs=sel==="all"?vehs():vehs().filter(x=>String(x.id)===sel);
+  if(!vs.length)return flash("No vehicles available",0);
+  flash("Loading…",1);
+  let H=[],R=[],demo=false;
+  const loc=p=>p.lat+", "+p.lng;
+  if(kind==="hist")H=["SR. NO.","VEHICLE","IMEI","TIME","LATITUDE","LONGITUDE","SPEED (KM/H)","IGNITION","POWER (V)"];
+  if(kind==="onoff")H=["SR. NO.","VEHICLE","IGNITION","START TIME","END TIME","DURATION","DISTANCE (KM)","START LOCATION","END LOCATION"];
+  if(kind==="sum")H=["DATE","VEHICLE","IMEI","DISTANCE (KM)","MAX SPEED","AVG SPEED","RUNNING (IGN ON)","STOPPED (IGN OFF)","IGN ON COUNT","FIRST IGN ON","LAST IGN OFF"];
+  for(const v of vs){
+    const r=await getPts(v,f,t);demo=demo||r.demo;const a=r.a;if(!a.length)continue;
+    if(kind==="hist")a.forEach((p,i)=>R.push([i+1,v.name,v.imei,ts(new Date(p.t)),p.lat,p.lng,nz(p.speed),p.ign?"ON":"OFF",nz(p.power)]));
+    else if(kind==="onoff"){
+      const seg=[];a.forEach(p=>{const l=seg[seg.length-1];if(l&&l.ign===!!p.ign){l.e=p;l.pts.push(p);}else seg.push({ign:!!p.ign,s:p,e:p,pts:[p]});});
+      seg.forEach((g,i)=>{const end=seg[i+1]?seg[i+1].s:g.e;
+        R.push([R.length+1,v.name,g.ign?"ON":"OFF",ts(new Date(g.s.t)),ts(new Date(end.t)),fd(end.t-g.s.t),calc(g.pts).d.toFixed(1),loc(g.s),loc(end)]);});
+    }else{
+      const days={};a.forEach(p=>{const k=ts(new Date(p.t)).slice(0,10);(days[k]=days[k]||[]).push(p);});
+      Object.keys(days).sort().forEach(k=>{const s=calc(days[k]);R.push([k,v.name,v.imei,s.d.toFixed(1),s.mx,s.avg.toFixed(0),fd(s.run),fd(s.stop),s.on,s.first,s.last]);});
+    }
+  }
+  if(!$("rres"))return;
+  _rep={h:H,r:R,n:kind+"_report"};
+  if(!R.length){$("rres").innerHTML=`<div class="soon">No data found for this period</div>`;return flash("No data found",0);}
+  $("msg").className="msg";$("msg").textContent="";
+  const show=R.slice(0,1000);
+  $("rtit").innerHTML=`Result <small style="color:#64748b">(${R.length} rows)</small>${demo?`<span class="demo">${DEMO_NOTE}</span>`:""}`;
+  $("rres").innerHTML=`<table><tr>${H.map(h=>`<th>${h}</th>`).join("")}</tr>${show.map(r=>`<tr>${r.map(c=>`<td>${esc(String(c))}</td>`).join("")}</tr>`).join("")}</table>${R.length>show.length?`<div class="pgbar"><span>Pehle 1000 rows dikh rahi hain – poora data Excel export me milega</span></div>`:""}`;
+}
+function repExport(){
+  if(!_rep.r.length)return flash("Pehle SHOW REPORT dabayein, phir export karein",0);
+  const rows=[_rep.h].concat(_rep.r),fn=_rep.n+"_"+ts().slice(0,10);
+  if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Report");XLSX.writeFile(wb,fn+".xlsx");}
+  else{const b=new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fn+".csv";a.click();}
+}
 
 /* ---------- 3D live PCB background (login) ---------- */
 function pcb3d(){
